@@ -13,6 +13,9 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        // 大文件走 maven 镜像时 JDK 的 TLS 会被中途掐断（bad_record_mac），
+        // 个别大 jar 先用 curl 下到本地再从这里取。
+        maven { url 'file:///D:/android-tools/localrepo' }
         maven { url 'https://maven.aliyun.com/repository/google' }
         maven { url 'https://maven.aliyun.com/repository/public' }
         google()

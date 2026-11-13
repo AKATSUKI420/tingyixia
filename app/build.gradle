@@ -33,4 +33,28 @@ android {
         abortOnError false
         checkReleaseBuilds false
     }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            returnDefaultValues = true
+            all {
+                // Robolectric downloads its android-all jar at test runtime;
+                // direct TLS to maven is unreliable on this machine.
+                systemProperty 'http.proxyHost', '127.0.0.1'
+                systemProperty 'http.proxyPort', '7897'
+                systemProperty 'https.proxyHost', '127.0.0.1'
+                systemProperty 'https.proxyPort', '7897'
+                testLogging {
+                    events 'passed', 'failed', 'skipped'
+                    exceptionFormat 'full'
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.11.1'
 }
