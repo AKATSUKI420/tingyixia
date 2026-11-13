@@ -1,0 +1,250 @@
+package com.scrollguard;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ServiceInfo;
+import android.content.res.Configuration;
+import android.media.AudioManager;
+import android.os.Build;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.PowerManager;
+import android.os.SystemClock;
+import android.provider.Settings;
+
+/**
+ * 每秒看一眼：现在是不是在刷竖屏短视频？连着刷满就算。
+ */
+public class GuardService extends Service {
+
+    public static final String ACTION_TEST = "com.scrollguard.TEST";
+
+    private static final String CHANNEL = "guard";
+    private static final int NOTI_ID = 1;
+    private static final long IDLE_RESET_MS = 2500L;
+    private static final long FLUSH_EVERY_MS = 15000L;
+    private static final long SCROLL_WINDOW_MS = 45000L;
+
+    private Handler handler;
+    private LockOverlay overlay;
+    private long lastTick;
+    private long idleMs;
+    private long pendingMs;
+    private long lastPlayCheck;
+    private boolean playValue = true;
+
+    private final Runnable ticker = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                step();
+            } catch (Throwable ignored) {
+                // 不让一次异常把整个计时停掉
+            }
+            if (handler != null) {
+                handler.postDelayed(this, 1000);
+            }
+        }
+    };
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        handler = new Handler(Looper.getMainLooper());
+        overlay = new LockOverlay(this);
+        GuardState.get().serviceRunning = true;
+        lastTick = SystemClock.elapsedRealtime();
+        goForeground();
+        ReviveJob.schedule(this);
+        handler.postDelayed(ticker, 1000);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (!Prefs.enabled(this)) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        if (intent != null && ACTION_TEST.equals(intent.getAction())) {
+            tryTest();
+        }
+        return START_STICKY;
+    }
+
+    private void tryTest() {
+        if (!Settings.canDrawOverlays(this)) {
+            return;
+        }
+        if (overlay.isShowing()) {
+            return;
+        }
+        overlay.show((int) Prefs.limitMin(this), () -> {
+            GuardState.get().countedMs = 0;
+            lastTick = SystemClock.elapsedRealtime();
+        });
+    }
+
+    private void step() {
+        long now = SystemClock.elapsedRealtime();
+        long dt = now - lastTick;
+        lastTick = now;
+        if (dt <= 0 || dt > 5000) {
+            dt = 1000;
+        }
+
+        if (!Prefs.enabled(this)) {
+            stopSelf();
+            return;
+        }
+
+        if (overlay.isShowing()) {
+            return;
+        }
+
+        GuardState st = GuardState.get();
+        st.portrait = getResources().getConfiguration().orientation
+                != Configuration.ORIENTATION_LANDSCAPE;
+
+        boolean counting = st.portrait
+                && screenOn()
+                && Prefs.targets(this).contains(st.fgPackage)
+                && (!Prefs.strict(this) || isPlaying() || st.scrolledWithin(SCROLL_WINDOW_MS));
+
+        if (!counting) {
+            idleMs += dt;
+            if (idleMs >= IDLE_RESET_MS) {
+                idleMs = 0;
+                st.countedMs = 0;
+            }
+            return;
+        }
+
+        idleMs = 0;
+        st.countedMs += dt;
+        pendingMs += dt;
+        if (pendingMs >= FLUSH_EVERY_MS) {
+            flush();
+        }
+
+        long limitMs = Prefs.limitMin(this) * 60000L;
+        if (st.countedMs >= limitMs) {
+            lock();
+        }
+    }
+
+    private void lock() {
+        GuardState st = GuardState.get();
+        if (overlay.isShowing()) {
+            return;
+        }
+        flush();
+        if (!Settings.canDrawOverlays(this)) {
+            // 没有悬浮窗权限就拦不住，别一直重试
+            st.countedMs = 0;
+            return;
+        }
+        st.locked = true;
+        Prefs.bumpTodayLocks(this);
+        overlay.show((int) Prefs.limitMin(this), () -> {
+            GuardState s = GuardState.get();
+            s.countedMs = 0;
+            s.locked = false;
+            idleMs = 0;
+            lastTick = SystemClock.elapsedRealtime();
+        });
+    }
+
+    /** 熄屏了就不算 */
+    private boolean screenOn() {
+        try {
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            return pm == null || pm.isInteractive();
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
+    /** 严格模式用：有没有声音在响（能听见就基本是在播） */
+    private boolean isPlaying() {
+        long now = System.currentTimeMillis();
+        if (now - lastPlayCheck < 2000L) {
+            return playValue;
+        }
+        boolean v;
+        try {
+            AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            v = am != null && am.isMusicActive();
+        } catch (Throwable t) {
+            v = true;
+        }
+        lastPlayCheck = now;
+        playValue = v;
+        return v;
+    }
+
+    private void flush() {
+        if (pendingMs <= 0) {
+            return;
+        }
+        Prefs.addTodayMs(this, pendingMs);
+        pendingMs = 0;
+    }
+
+    private void goForeground() {
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (nm != null) {
+            NotificationChannel ch = new NotificationChannel(
+                    CHANNEL, "防护在运行", NotificationManager.IMPORTANCE_MIN);
+            ch.setShowBadge(false);
+            ch.enableVibration(false);
+            ch.setSound(null, null);
+            nm.createNotificationChannel(ch);
+        }
+
+        PendingIntent pi = PendingIntent.getActivity(
+                this, 0, new Intent(this, MainActivity.class),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        String line = "抖音 / 哔哩哔哩 竖屏连着刷 " + Prefs.limitMin(this) + " 分钟会拦一下";
+        Notification n = new Notification.Builder(this, CHANNEL)
+                .setSmallIcon(R.drawable.ic_noti)
+                .setContentTitle("停一下在看着")
+                .setContentText(line)
+                .setOngoing(true)
+                .setShowWhen(false)
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .setContentIntent(pi)
+                .build();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTI_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        } else {
+            startForeground(NOTI_ID, n);
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        flush();
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+        }
+        if (overlay != null) {
+            overlay.dismiss();
+        }
+        GuardState.get().serviceRunning = false;
+        GuardState.get().fgPackage = "";
+        super.onDestroy();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+}

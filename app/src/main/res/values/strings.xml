@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">停一下</string>
+    <string name="accessibility_desc">用来判断你现在是不是正在抖音或哔哩哔哩里刷竖屏短视频：只看前台是哪个应用、屏幕是横还是竖，必要时读一下这两个应用屏幕上显示的文字（用来区分长视频和短视频）。不读取聊天内容，不联网，不上传任何东西，所有数据只存在这台手机上。</string>
+</resources>
