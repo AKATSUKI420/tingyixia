@@ -53,9 +53,14 @@ public class ReviveJob extends JobService {
         }
     }
 
+    /** 该不该把计时服务拉起来 */
+    static boolean shouldRevive(Context c) {
+        return Prefs.enabled(c) && !GuardState.get().serviceRunning;
+    }
+
     @Override
     public boolean onStartJob(JobParameters params) {
-        if (Prefs.enabled(this) && !GuardState.get().serviceRunning) {
+        if (shouldRevive(this)) {
             startGuard(this);
         }
         return false;

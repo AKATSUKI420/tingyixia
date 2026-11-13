@@ -101,8 +101,13 @@ public final class Prefs {
 
     // ---------- 今天 ----------
 
+    /** 统计用的日键。抽成纯函数，跨天那一页才能在测试里验。 */
+    public static String dayKey(long epochMs) {
+        return new SimpleDateFormat("yyyyMMdd", Locale.US).format(new Date(epochMs));
+    }
+
     private static String day() {
-        return new SimpleDateFormat("yyyyMMdd", Locale.US).format(new Date());
+        return dayKey(System.currentTimeMillis());
     }
 
     public static long todayMs(Context c) {

@@ -199,10 +199,14 @@ public class MainActivity extends Activity {
                 this::testLock));
         other.addView(Ui.divider(this));
         other.addView(tapRow(Ui.row(this, "换密码", null, Ui.value(this, "›")),
-                () -> requirePin("先输现在的密码", () -> {
+                () -> requirePin("先输现在的密码", pin -> {
+                    if (!Gate.check(this, pin)) {
+                        return false;
+                    }
                     Intent i = new Intent(this, SetupActivity.class);
                     i.putExtra(SetupActivity.EXTRA_CHANGE, true);
                     startActivity(i);
+                    return true;
                 })));
         other.addView(Ui.divider(this));
         other.addView(tapRow(Ui.row(this, "忘掉密码", "清掉全部数据，从头再设", Ui.value(this, "›")),
@@ -302,17 +306,20 @@ public class MainActivity extends Activity {
 
     private void toggle() {
         if (Prefs.enabled(this)) {
-            requirePin("输密码才能关", () -> {
-                Prefs.setEnabled(this, false);
+            requirePin("输密码才能关", pin -> {
+                if (!Gate.disable(this, pin)) {
+                    return false;
+                }
                 stopService(new Intent(this, GuardService.class));
                 ReviveJob.cancel(this);
                 GuardState.get().countedMs = 0;
                 build();
                 toast("关掉了");
+                return true;
             });
             return;
         }
-        Prefs.setEnabled(this, true);
+        Gate.enable(this);
         ReviveJob.startGuard(this);
         ReviveJob.schedule(this);
         askNotifications();
@@ -342,7 +349,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void requirePin(String prompt, final Runnable ok) {
+    /** 输密码的框；回调返回 true 表示这次输入被接受，框才会关 */
+    private interface PinCheck {
+        boolean run(String pin);
+    }
+
+    private void requirePin(String prompt, final PinCheck ok) {
         final EditText et = new EditText(this);
         et.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
         et.setHint("6 位数字");
@@ -358,9 +370,8 @@ public class MainActivity extends Activity {
                 .setNegativeButton("算了", null)
                 .create();
         d.setOnShowListener(x -> d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            if (Pin.check(this, et.getText().toString().trim())) {
+            if (ok.run(et.getText().toString().trim())) {
                 d.dismiss();
-                ok.run();
             } else {
                 et.setError("不对");
             }

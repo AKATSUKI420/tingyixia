@@ -27,19 +27,16 @@ public class GuardService extends Service {
 
     private static final String CHANNEL = "guard";
     private static final int NOTI_ID = 1;
-    private static final long IDLE_RESET_MS = 2500L;
-    private static final long FLUSH_EVERY_MS = 15000L;
-    private static final long SCROLL_WINDOW_MS = 45000L;
+
+    private final Ticker ticker = new Ticker();
 
     private Handler handler;
     private LockOverlay overlay;
     private long lastTick;
-    private long idleMs;
-    private long pendingMs;
     private long lastPlayCheck;
     private boolean playValue = true;
 
-    private final Runnable ticker = new Runnable() {
+    private final Runnable loop = new Runnable() {
         @Override
         public void run() {
             try {
@@ -62,7 +59,7 @@ public class GuardService extends Service {
         lastTick = SystemClock.elapsedRealtime();
         goForeground();
         ReviveJob.schedule(this);
-        handler.postDelayed(ticker, 1000);
+        handler.postDelayed(loop, 1000);
     }
 
     @Override
@@ -85,18 +82,18 @@ public class GuardService extends Service {
             return;
         }
         overlay.show((int) Prefs.limitMin(this), () -> {
-            GuardState.get().countedMs = 0;
+            GuardState s = GuardState.get();
+            ticker.resetCounting();
+            s.countedMs = 0L;
+            s.locked = false;
             lastTick = SystemClock.elapsedRealtime();
         });
     }
 
     private void step() {
         long now = SystemClock.elapsedRealtime();
-        long dt = now - lastTick;
+        long dt = Ticker.clamp(now - lastTick);
         lastTick = now;
-        if (dt <= 0 || dt > 5000) {
-            dt = 1000;
-        }
 
         if (!Prefs.enabled(this)) {
             stopSelf();
@@ -111,29 +108,18 @@ public class GuardService extends Service {
         st.portrait = getResources().getConfiguration().orientation
                 != Configuration.ORIENTATION_LANDSCAPE;
 
-        boolean counting = st.portrait
-                && screenOn()
-                && Prefs.targets(this).contains(st.fgPackage)
-                && (!Prefs.strict(this) || isPlaying() || st.scrolledWithin(SCROLL_WINDOW_MS));
+        boolean active = Ticker.active(
+                Prefs.strict(this), isPlaying(), st.scrolledWithin(Ticker.SCROLL_WINDOW_MS));
+        boolean counting = Ticker.counts(
+                st.portrait, screenOn(), Prefs.targets(this).contains(st.fgPackage), active);
 
-        if (!counting) {
-            idleMs += dt;
-            if (idleMs >= IDLE_RESET_MS) {
-                idleMs = 0;
-                st.countedMs = 0;
-            }
-            return;
-        }
+        boolean due = ticker.advance(dt, counting, Prefs.limitMin(this) * 60000L);
+        st.countedMs = ticker.countedMs();
 
-        idleMs = 0;
-        st.countedMs += dt;
-        pendingMs += dt;
-        if (pendingMs >= FLUSH_EVERY_MS) {
+        if (ticker.pendingMs() >= Ticker.FLUSH_EVERY_MS) {
             flush();
         }
-
-        long limitMs = Prefs.limitMin(this) * 60000L;
-        if (st.countedMs >= limitMs) {
+        if (due) {
             lock();
         }
     }
@@ -146,16 +132,17 @@ public class GuardService extends Service {
         flush();
         if (!Settings.canDrawOverlays(this)) {
             // 没有悬浮窗权限就拦不住，别一直重试
-            st.countedMs = 0;
+            ticker.resetCounting();
+            st.countedMs = 0L;
             return;
         }
         st.locked = true;
         Prefs.bumpTodayLocks(this);
         overlay.show((int) Prefs.limitMin(this), () -> {
             GuardState s = GuardState.get();
-            s.countedMs = 0;
+            ticker.resetCounting();
+            s.countedMs = 0L;
             s.locked = false;
-            idleMs = 0;
             lastTick = SystemClock.elapsedRealtime();
         });
     }
@@ -189,11 +176,11 @@ public class GuardService extends Service {
     }
 
     private void flush() {
-        if (pendingMs <= 0) {
+        long v = ticker.takePending();
+        if (v <= 0L) {
             return;
         }
-        Prefs.addTodayMs(this, pendingMs);
-        pendingMs = 0;
+        Prefs.addTodayMs(this, v);
     }
 
     private void goForeground() {

@@ -6,27 +6,9 @@ import android.view.accessibility.AccessibilityEvent;
 
 /**
  * 只看两件事：现在前台是哪个应用、有没有滑动。别的都不碰。
+ * 判断本身在 {@link Shield} 里。
  */
 public class ShieldService extends AccessibilityService {
-
-    /** 这些包名弹出来的窗口不算"切走了" */
-    private static final String[] NOISE = {
-            "android",
-            "com.android.systemui",
-            "com.android.permissioncontroller",
-            "com.google.android.permissioncontroller",
-            "com.android.packageinstaller",
-            "com.google.android.packageinstaller"
-    };
-
-    private static boolean isNoise(String pkg) {
-        for (String n : NOISE) {
-            if (n.equals(pkg)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     @Override
     protected void onServiceConnected() {
@@ -47,15 +29,9 @@ public class ShieldService extends AccessibilityService {
         GuardState st = GuardState.get();
 
         if (e.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            if (isNoise(pkg)) {
-                return;
-            }
-            st.fgPackage = pkg;
-            st.touchScroll();
+            Shield.onWindow(st, pkg);
         } else if (e.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-            if (Prefs.targets(this).contains(pkg)) {
-                st.touchScroll();
-            }
+            Shield.onScroll(st, Prefs.targets(this), pkg);
         }
     }
 
@@ -66,7 +42,7 @@ public class ShieldService extends AccessibilityService {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        GuardState.get().fgPackage = "";
+        Shield.onGone(GuardState.get());
         return super.onUnbind(intent);
     }
 }
