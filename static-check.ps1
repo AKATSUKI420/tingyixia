@@ -9,6 +9,9 @@ param(
 $ErrorActionPreference = 'Stop'
 if (-not $Root) { $Root = $PSScriptRoot }
 
+# apksigner needs a JRE; default to the bundled one so this runs from any shell.
+if (-not $env:JAVA_HOME) { $env:JAVA_HOME = 'D:\android-tools\jdk17' }
+
 $bt  = 'D:\android-tools\sdk\build-tools\34.0.0'
 $bt2 = 'D:\android-tools\sdk\platform-tools'
 

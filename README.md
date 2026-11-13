@@ -114,3 +114,35 @@ $env:ANDROID_SDK_ROOT = 'D:\android-tools\sdk'
 | `LockOverlay` | 那块遮罩 + 密码键盘 |
 | `MainActivity` | 首页 |
 | `SetupActivity` / `PinPadView` | 设密码、解锁用的键盘 |
+
+---
+
+## 怎么验它还能用
+
+这台电脑跑不了安卓模拟器（没有硬件加速），所以验收拆成两半：
+
+**能在电脑上判的，全写成了自动测试**（90 个，Robolectric）：
+
+```powershell
+$env:JAVA_HOME = 'D:\android-tools\jdk17'
+$env:ANDROID_SDK_ROOT = 'D:\android-tools\sdk'
+& 'D:\android-tools\gradle\gradle-8.7\bin\gradle.bat' -p 'D:\scrollguard' testDebugUnitTest --console=plain
+```
+
+报告在 `app/build/reports/tests/testDebugUnitTest/index.html`。
+
+**APK 结构**（29 项：无网络权限、无 allowBackup、签名、清单、无障碍配置……）：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\static-check.ps1
+```
+
+**只有摸到手机才能判的 12 条**，在 `docs/验收单.md` 里按顺序做一遍。
+逐条对着 PRD 第 10 节看谁验了什么：`docs/测试覆盖.md`。
+
+打包（产物带时间戳和 sha256，落在 `dist/`）：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
+```
+
