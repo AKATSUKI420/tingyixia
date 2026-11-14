@@ -1,0 +1,17 @@
+# 换行统一：仓库里一律存 LF，检出到各平台时再转换
+* text=auto
+
+# Windows 脚本按 CRLF 检出，免得某些编辑器和工具读不了
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制文件，不要做任何换行或文本转换
+*.apk  binary
+*.png  binary
+*.jpg  binary
+*.jar  binary
+*.zip  binary
+*.dex  binary
+*.keystore binary
+*.jks  binary
