@@ -6,16 +6,21 @@ param(
     [switch]$Shot,
     [string]$ShotPath = '',
     [switch]$NoStart,
-    [int]$BootTimeoutSec = 180
+    [int]$BootTimeoutSec = 180,
+    # toolchain home; override if JDK/SDK live somewhere else
+    [string]$Tools = 'D:\android-tools',
+    # MuMu install (mumu-cli.exe)
+    [string]$MuMuCli = 'D:\Program Files\Netease\MuMu\nx_main\mumu-cli.exe',
+    [string]$Serial = '127.0.0.1:16384'
 )
 
 $ErrorActionPreference = 'Stop'
 
 $root   = $PSScriptRoot
-$sdk    = 'D:\android-tools\sdk'
+$sdk    = Join-Path $Tools 'sdk'
 $adb    = Join-Path $sdk 'platform-tools\adb.exe'
-$mumu   = 'D:\Program Files\Netease\MuMu\nx_main\mumu-cli.exe'
-$serial = '127.0.0.1:16384'
+$mumu   = $MuMuCli
+$serial = $Serial
 $pkg    = 'com.scrollguard'
 $act    = 'com.scrollguard/.MainActivity'
 

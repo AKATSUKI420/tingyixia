@@ -3,7 +3,12 @@
 #       files, so any non-ASCII literal here would corrupt paths at runtime.
 param(
     [string]$Version = '',
-    [string]$Root = ''
+    [string]$Root = '',
+    # toolchain home; override if you keep JDK/SDK/Gradle somewhere else
+    [string]$Tools = 'D:\android-tools',
+    # gradle project dir; must stay ASCII-only (AGP rejects non-ASCII paths),
+    # so on a machine with a Chinese project path this is a junction to it
+    [string]$Proj = 'D:\scrollguard'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,19 +21,24 @@ if (-not $Version) {
     $m = Select-String -Path $g -Pattern 'versionName\s+"([^"]+)"' | Select-Object -First 1
     if ($m) { $Version = $m.Matches[0].Groups[1].Value } else { $Version = '0.0.0' }
 }
-$proj = 'D:\scrollguard'
-$sdk  = 'D:\android-tools\sdk'
 
-$env:JAVA_HOME        = 'D:\android-tools\jdk17'
+$jdk  = Join-Path $Tools 'jdk17'
+$sdk  = Join-Path $Tools 'sdk'
+$gradle = Join-Path $Tools 'gradle\gradle-8.7\bin\gradle.bat'
+
+foreach ($p in @($jdk, $sdk, $gradle)) {
+    if (-not (Test-Path $p)) { throw "toolchain not found: $p (pass -Tools <dir>)" }
+}
+
+$env:JAVA_HOME        = $jdk
 $env:ANDROID_SDK_ROOT = $sdk
 $env:ANDROID_HOME     = $sdk
-$gradle = 'D:\android-tools\gradle\gradle-8.7\bin\gradle.bat'
 
 Write-Host "== gradle assembleRelease =="
-& $gradle -p $proj assembleRelease --console=plain
+& $gradle -p $Proj assembleRelease --console=plain
 if ($LASTEXITCODE -ne 0) { throw "gradle failed with exit code $LASTEXITCODE" }
 
-$src = Join-Path $proj 'app\build\outputs\apk\release\app-release.apk'
+$src = Join-Path $Proj 'app\build\outputs\apk\release\app-release.apk'
 if (-not (Test-Path $src)) { throw "apk not found: $src" }
 
 $dist = Join-Path $Root 'dist'

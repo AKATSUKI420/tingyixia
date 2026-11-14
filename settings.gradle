@@ -12,10 +12,16 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
+    // 大文件走 maven 镜像时 JDK 的 TLS 会被中途掐断（bad_record_mac），
+    // 个别大 jar 先用 curl 下到本地再从这里取。目录不存在就整段跳过，
+    // 别人 clone 下来不用改这一行；想放别处就设 LOCAL_MAVEN 环境变量。
+    def localRepo = file(System.getenv('LOCAL_MAVEN') ?: 'D:/android-tools/localrepo')
+
     repositories {
-        // 大文件走 maven 镜像时 JDK 的 TLS 会被中途掐断（bad_record_mac），
-        // 个别大 jar 先用 curl 下到本地再从这里取。
-        maven { url 'file:///D:/android-tools/localrepo' }
+        if (localRepo.isDirectory()) {
+            maven { url localRepo.toURI().toString() }
+        }
         maven { url 'https://maven.aliyun.com/repository/google' }
         maven { url 'https://maven.aliyun.com/repository/public' }
         google()
