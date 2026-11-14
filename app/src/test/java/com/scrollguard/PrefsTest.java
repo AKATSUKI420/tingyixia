@@ -160,4 +160,34 @@ public class PrefsTest {
         Prefs.setLimitMin(c(), 99999L);
         assertEquals("太大就拉回上限", 600L, Prefs.limitMin(c()));
     }
+
+    /** 自动解开默认关；填多少存多少，越界夹回 0–600 */
+    @Test
+    public void autoUnlockIsClampedToRange() {
+        assertEquals("默认不自动解开", 0, Prefs.autoUnlockMin(c()));
+
+        Prefs.setAutoUnlockMin(c(), 5L);
+        assertEquals(5, Prefs.autoUnlockMin(c()));
+
+        Prefs.setAutoUnlockMin(c(), -3L);
+        assertEquals("漏下去的负数当关", 0, Prefs.autoUnlockMin(c()));
+
+        Prefs.setAutoUnlockMin(c(), 99999L);
+        assertEquals("太大就拉回上限", AutoUnlock.MAX, Prefs.autoUnlockMin(c()));
+
+        SharedPreferences sp = c().getSharedPreferences("guard", Context.MODE_PRIVATE);
+        assertEquals(600L, sp.getLong("auto_unlock_min", -1L));
+    }
+
+    /** 自动解开设置不会污染别的设置 */
+    @Test
+    public void autoUnlockDoesNotTouchOtherSettings() {
+        Prefs.setLimitMin(c(), 15L);
+        Prefs.setStrict(c(), true);
+        Prefs.setAutoUnlockMin(c(), 7L);
+
+        assertEquals(15L, Prefs.limitMin(c()));
+        assertTrue(Prefs.strict(c()));
+        assertEquals(7, Prefs.autoUnlockMin(c()));
+    }
 }

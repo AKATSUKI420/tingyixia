@@ -43,8 +43,12 @@ public class LockOverlayTest {
     }
 
     private void show(int limitMin) {
+        show(limitMin, AutoUnlock.OFF);
+    }
+
+    private void show(int limitMin, int autoUnlockMin) {
         unlocked = false;
-        overlay.show(limitMin, () -> unlocked = true);
+        overlay.show(limitMin, autoUnlockMin, () -> unlocked = true);
         View v = view(overlay);
         assertNotNull("那一层没挂上去", v);
         pad = v.findViewById(R.id.pad);
@@ -154,5 +158,65 @@ public class LockOverlayTest {
         });
 
         assertEquals("不该盖第二层", first, view(overlay));
+    }
+
+    // ---------- 问题3：锁一会儿自己解开 ----------
+
+    @Test
+    public void autoUnlockShowsACountdown() {
+        show(10, 3);
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofSeconds(2));
+        String line = ((TextView) view(overlay).findViewById(R.id.lock_footer)).getText().toString();
+
+        assertTrue("没写还剩多久：" + line, line.contains("后自己解开"));
+        assertTrue("原来那句也不能丢：" + line, line.startsWith(Text.lockFooter(1))
+                || line.startsWith(Text.lockFooter(2)));
+    }
+
+    /** 那行字的拼法：停了多久 · 还剩多久 */
+    @Test
+    public void footerLinePutsBothTogether() {
+        assertEquals(Text.lockFooter(2) + " · 2 分 58 秒后自己解开",
+                LockOverlay.footerLine(2, 3, 10_000L, 12_000L));
+        assertEquals(Text.lockFooter(2), LockOverlay.footerLine(2, AutoUnlock.OFF, 10_000L, 12_000L));
+        assertEquals(Text.lockFooter(60) + " · 45 秒后自己解开",
+                LockOverlay.footerLine(60, 1, 10_000L, 10_000L + 15_000L));
+    }
+
+    @Test
+    public void autoUnlockLetsYouOutAtTheDeadline() {
+        show(10, 1);
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofSeconds(59));
+        assertTrue("还差 1 秒就放人了", overlay.isShowing());
+        assertFalse(unlocked);
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofSeconds(2));
+
+        assertFalse("到点了还盖着", overlay.isShowing());
+        assertTrue("自动解开没通知服务", unlocked);
+    }
+
+    @Test
+    public void autoUnlockOffNeverLetsYouOut() {
+        show(10, AutoUnlock.OFF);
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMinutes(10));
+
+        assertTrue("没设自动解开，不该自己放人", overlay.isShowing());
+        assertFalse(unlocked);
+    }
+
+    @Test
+    public void dismissBeforeTheDeadlineIsNotAnAutoUnlock() {
+        show(10, 1);
+        overlay.dismiss();
+        unlocked = false;
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMinutes(2));
+
+        assertFalse(overlay.isShowing());
+        assertFalse("手动关掉不该回头再调一次解锁回调", unlocked);
     }
 }

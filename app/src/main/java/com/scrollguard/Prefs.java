@@ -62,6 +62,15 @@ public final class Prefs {
         sp(c).edit().putLong("limit_min", Limits.clamp(v, Limits.MIN, Limits.MAX)).apply();
     }
 
+    public static int autoUnlockMin(Context c) {
+        long d = sp(c).getLong("auto_unlock_min", AutoUnlock.OFF);
+        return (int) Limits.clamp(d, AutoUnlock.MIN, AutoUnlock.MAX);
+    }
+
+    public static void setAutoUnlockMin(Context c, long v) {
+        sp(c).edit().putLong("auto_unlock_min", Limits.clamp(v, AutoUnlock.MIN, AutoUnlock.MAX)).apply();
+    }
+
     public static boolean enabled(Context c) {
         return sp(c).getBoolean("enabled", false);
     }

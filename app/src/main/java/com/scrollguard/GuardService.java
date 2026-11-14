@@ -81,7 +81,7 @@ public class GuardService extends Service {
         if (overlay.isShowing()) {
             return;
         }
-        overlay.show((int) Prefs.limitMin(this), () -> {
+        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this), () -> {
             GuardState s = GuardState.get();
             ticker.resetCounting();
             s.countedMs = 0L;
@@ -138,7 +138,7 @@ public class GuardService extends Service {
         }
         st.locked = true;
         Prefs.bumpTodayLocks(this);
-        overlay.show((int) Prefs.limitMin(this), () -> {
+        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this), () -> {
             GuardState s = GuardState.get();
             ticker.resetCounting();
             s.countedMs = 0L;
@@ -199,6 +199,9 @@ public class GuardService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         String line = "抖音 / 哔哩哔哩 竖屏连着刷 " + Prefs.limitMin(this) + " 分钟会拦一下";
+        if (Prefs.autoUnlockMin(this) > 0) {
+            line = line + "，锁 " + Prefs.autoUnlockMin(this) + " 分钟后自动解开";
+        }
         Notification n = new Notification.Builder(this, CHANNEL)
                 .setSmallIcon(R.drawable.ic_noti)
                 .setContentTitle("停一下在看着")

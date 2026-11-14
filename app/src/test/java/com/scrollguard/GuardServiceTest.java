@@ -214,4 +214,43 @@ public class GuardServiceTest {
                 app.getSystemService(android.content.Context.JOB_SCHEDULER_SERVICE);
         assertEquals(1, js.getAllPendingJobs().size());
     }
+
+    // ---------- 问题3：锁一会儿自己解开 ----------
+
+    /** 设了自动解开：到点自己走人，计时也从头开始，不然一解锁就又满了 */
+    @Test
+    public void autoUnlockLetsGoAndResetsTheCount() {
+        Prefs.setAutoUnlockMin(app, 2L);
+        GuardState.get().fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(61_000);
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue("满一分钟该拦", overlay.isShowing());
+
+        idle(59_000);
+        assertTrue("两分钟还没到，不该放人", overlay.isShowing());
+
+        idle(61_000);
+
+        assertFalse("到点了应该自己解开", overlay.isShowing());
+        assertFalse(GuardState.get().locked);
+        assertTrue("自动解开后也该从头算", GuardState.get().countedMs < 3000L);
+    }
+
+    /** 没设自动解开就一直盖着，没人替用户放行 */
+    @Test
+    public void withoutAutoUnlockItStaysUp() {
+        GuardState.get().fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(61_000);
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue(overlay.isShowing());
+
+        idle(5 * 60_000);
+
+        assertTrue("没设自动解开就不许自己走", overlay.isShowing());
+        assertTrue(GuardState.get().locked);
+    }
 }

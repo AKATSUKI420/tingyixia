@@ -146,8 +146,74 @@ public class MainActivityTest {
         assertEquals("超过上限也不该改", 10L, Prefs.limitMin(app));
     }
 
-    private static View findClickableRow(View v, String title) {
-        if (v instanceof ViewGroup && !(v instanceof TextView)) {
+    // ---------- 问题3：锁屏后多久自动解开，也是自己填 ----------
+
+    @Test
+    public void autoUnlockStartsOffAndIsTypedIn() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        assertTrue("默认该写着不自动解开",
+                hasText(a.findViewById(android.R.id.content), "不自动解开"));
+
+        View row = findClickableRow(a.findViewById(android.R.id.content), "锁屏后多久自动解开");
+        assertNotNull("规则里找不到自动解开那一行", row);
+        row.performClick();
+        ShadowLooper.shadowMainLooper().idle();
+
+        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull("点开没弹框", d);
+        EditText et = findEditText(d.getWindow().getDecorView());
+        assertEquals("框里该是现在的值", "0", et.getText().toString());
+
+        et.setText("5");
+        d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+
+        assertEquals("填 5 就该存 5", 5, Prefs.autoUnlockMin(app));
+        assertFalse("存下了框该关", d.isShowing());
+        assertTrue("首页该跟着变成 5 分钟",
+                hasText(a.findViewById(android.R.id.content), "5 分钟后自动解开"));
+    }
+
+    @Test
+    public void autoUnlockCanBeTurnedBackOff() {
+        Pin.save(app, "123456");
+        Prefs.setAutoUnlockMin(app, 7L);
+        MainActivity a = open();
+
+        findClickableRow(a.findViewById(android.R.id.content), "锁屏后多久自动解开").performClick();
+        ShadowLooper.shadowMainLooper().idle();
+        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
+        EditText et = findEditText(d.getWindow().getDecorView());
+        assertEquals("7", et.getText().toString());
+
+        et.setText("0");
+        d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+
+        assertEquals("填 0 就是关掉", 0, Prefs.autoUnlockMin(app));
+        assertTrue(hasText(a.findViewById(android.R.id.content), "不自动解开"));
+    }
+
+    /** 自动解开的输入同样不能乱填 */
+    @Test
+    public void badAutoUnlockInputIsRejected() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        findClickableRow(a.findViewById(android.R.id.content), "锁屏后多久自动解开").performClick();
+        ShadowLooper.shadowMainLooper().idle();
+        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
+        EditText et = findEditText(d.getWindow().getDecorView());
+
+        et.setText("601");
+        d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+
+        assertEquals("超过 600 不该改", 0, Prefs.autoUnlockMin(app));
+        assertNotNull("得提示填错了", et.getError());
+        assertTrue("填错了不该关掉框", d.isShowing());
+    }
+
+    private static View findClickableRow(View v, String title) {        if (v instanceof ViewGroup && !(v instanceof TextView)) {
             ViewGroup g = (ViewGroup) v;
             if (g.isClickable() && hasText(g, title)) {
                 return g;

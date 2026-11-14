@@ -123,6 +123,14 @@ public class MainActivity extends Activity {
         rules.addView(r1);
         rules.addView(Ui.divider(this));
 
+        TextView autoVal = Ui.value(this, AutoUnlock.label(Prefs.autoUnlockMin(this)));
+        autoVal.setTextColor(Ui.col(this, R.color.text));
+        LinearLayout r2 = Ui.row(this, "锁屏后多久自动解开", null, autoVal);
+        r2.setClickable(true);
+        r2.setOnClickListener(v -> pickAutoUnlock());
+        rules.addView(r2);
+        rules.addView(Ui.divider(this));
+
         rules.addView(Ui.row(this, "抖音", null, switchTarget(Prefs.DOUYIN)));
         rules.addView(Ui.divider(this));
         rules.addView(Ui.row(this, "哔哩哔哩", null, switchTarget(Prefs.BILI)));
@@ -288,6 +296,14 @@ public class MainActivity extends Activity {
                         stopService(new Intent(this, GuardService.class));
                         ReviveJob.startGuard(this);
                     }
+                    build();
+                });
+    }
+
+    private void pickAutoUnlock() {
+        askNumber("锁屏后多久自动解开", "填 0 就要输密码才解开",
+                Prefs.autoUnlockMin(this), AutoUnlock.MIN, AutoUnlock.MAX, v -> {
+                    Prefs.setAutoUnlockMin(this, v);
                     build();
                 });
     }

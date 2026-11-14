@@ -29,6 +29,7 @@ public final class LockOverlay {
     private PinPadView pad;
     private TextView footer;
     private long shownAt;
+    private int autoUnlockMin;
     private int fails;
     private long cooldownUntil;
     private boolean checking;
@@ -40,8 +41,13 @@ public final class LockOverlay {
             if (view == null) {
                 return;
             }
-            long sec = (SystemClock.elapsedRealtime() - shownAt) / 1000L;
-            footer.setText(Text.lockFooter(sec));
+            long now = SystemClock.elapsedRealtime();
+            if (AutoUnlock.due(autoUnlockMin, shownAt, now)) {
+                finishedUnlock();
+                return;
+            }
+            long sec = (now - shownAt) / 1000L;
+            footer.setText(footerLine(sec, autoUnlockMin, shownAt, now));
             handler.postDelayed(this, 1000);
         }
     };
@@ -55,7 +61,21 @@ public final class LockOverlay {
         return view != null;
     }
 
+    /** 遮罩下面那行字：停了多久；设了自动解开就再缀一句还剩多久。 */
+    static String footerLine(long sec, int autoMinutes, long shownAt, long now) {
+        String line = Text.lockFooter(sec);
+        if (autoMinutes > 0) {
+            line = line + " · " + AutoUnlock.countdown(
+                    AutoUnlock.remainingMs(autoMinutes, shownAt, now));
+        }
+        return line;
+    }
+
     public void show(int limitMin, Runnable unlockCallback) {
+        show(limitMin, AutoUnlock.OFF, unlockCallback);
+    }
+
+    public void show(int limitMin, int autoMinutes, Runnable unlockCallback) {
         if (view != null || wm == null) {
             return;
         }
@@ -92,6 +112,7 @@ public final class LockOverlay {
         view = v;
         onUnlock = unlockCallback;
         shownAt = SystemClock.elapsedRealtime();
+        autoUnlockMin = autoMinutes;
         fails = 0;
         cooldownUntil = 0;
         checking = false;
@@ -113,6 +134,7 @@ public final class LockOverlay {
         footer = null;
         onUnlock = null;
         checking = false;
+        autoUnlockMin = AutoUnlock.OFF;
     }
 
     private void onPin(String pin) {
