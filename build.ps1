@@ -2,13 +2,20 @@
 # NOTE: keep this file ASCII-only. PowerShell 5.1 misreads UTF-8-without-BOM
 #       files, so any non-ASCII literal here would corrupt paths at runtime.
 param(
-    [string]$Version = '1.0.0',
+    [string]$Version = '',
     [string]$Root = ''
 )
 
 $ErrorActionPreference = 'Stop'
 
 if (-not $Root) { $Root = $PSScriptRoot }
+
+# version defaults to the one in app/build.gradle, so the apk name never lies
+if (-not $Version) {
+    $g = Join-Path $Root 'app\build.gradle'
+    $m = Select-String -Path $g -Pattern 'versionName\s+"([^"]+)"' | Select-Object -First 1
+    if ($m) { $Version = $m.Matches[0].Groups[1].Value } else { $Version = '0.0.0' }
+}
 $proj = 'D:\scrollguard'
 $sdk  = 'D:\android-tools\sdk'
 

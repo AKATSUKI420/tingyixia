@@ -49,7 +49,13 @@ foreach ($p in @('SYSTEM_ALERT_WINDOW','FOREGROUND_SERVICE','FOREGROUND_SERVICE_
 # ---- 2. badging -----------------------------------------------------------
 $badge = & (Join-Path $bt 'aapt2.exe') dump badging $Apk 2>&1 | Out-String
 Check "package is com.scrollguard" ($badge -match "package: name='com\.scrollguard'") 'wrong package'
-Check "versionName 1.0"            ($badge -match "versionName='1\.0'")               'wrong version'
+$wantVer = '0.0.0'
+$gradleApp = Join-Path $Root 'app\build.gradle'
+if (Test-Path $gradleApp) {
+    $vm = Select-String -Path $gradleApp -Pattern 'versionName\s+"([^"]+)"' | Select-Object -First 1
+    if ($vm) { $wantVer = $vm.Matches[0].Groups[1].Value }
+}
+Check ("versionName " + $wantVer)   ($badge -match ("versionName='" + [regex]::Escape($wantVer) + "'")) 'wrong version'
 Check "minSdk 26"                  ($badge -match "sdkVersion:'26'")                  'wrong minSdk'
 Check "targetSdk 34"               ($badge -match "targetSdkVersion:'34'")            'wrong targetSdk'
 Check "has launcher activity"      ($badge -match "launchable-activity: name='com\.scrollguard\.MainActivity'") 'no launcher'
