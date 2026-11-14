@@ -8,3 +8,9 @@ dist/
 *.iml
 /*.apk
 shot-*.png
+
+# signing material and heap dumps must never be committed
+*.jks
+*.keystore
+*.p12
+*.hprof
