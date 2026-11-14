@@ -55,11 +55,11 @@ public final class Prefs {
     // ---------- 设置 ----------
 
     public static long limitMin(Context c) {
-        return sp(c).getLong("limit_min", 10L);
+        return Limits.clamp(sp(c).getLong("limit_min", Limits.DEFAULT), Limits.MIN, Limits.MAX);
     }
 
     public static void setLimitMin(Context c, long v) {
-        sp(c).edit().putLong("limit_min", v).apply();
+        sp(c).edit().putLong("limit_min", Limits.clamp(v, Limits.MIN, Limits.MAX)).apply();
     }
 
     public static boolean enabled(Context c) {

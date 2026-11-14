@@ -30,9 +30,6 @@ import java.util.Set;
  */
 public class MainActivity extends Activity {
 
-    private static final long[] LIMITS = {10, 15, 20, 30, 45};
-    private static final String[] LIMIT_NAMES = {"10 分钟", "15 分钟", "20 分钟", "30 分钟", "45 分钟"};
-
     private LinearLayout root;
     private ScrollView scroll;
     private Handler handler;
@@ -283,25 +280,51 @@ public class MainActivity extends Activity {
     // ------------------------------------------------------------------ 动作
 
     private void pickLimit() {
-        int cur = 0;
-        long now = Prefs.limitMin(this);
-        for (int i = 0; i < LIMITS.length; i++) {
-            if (LIMITS[i] == now) {
-                cur = i;
-            }
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("连着刷多久就拦")
-                .setSingleChoiceItems(LIMIT_NAMES, cur, (d, which) -> {
-                    Prefs.setLimitMin(this, LIMITS[which]);
-                    d.dismiss();
+        askNumber("连着刷多久就拦", "按分钟填，1 分钟起",
+                (int) Prefs.limitMin(this), Limits.MIN, Limits.MAX, v -> {
+                    Prefs.setLimitMin(this, v);
                     if (Prefs.enabled(this)) {
                         stopService(new Intent(this, GuardService.class));
                         ReviveJob.startGuard(this);
                     }
                     build();
-                })
-                .show();
+                });
+    }
+
+    /** 让用户自己敲一个整数；不合法就停在框里改，不存 */
+    private interface NumOk {
+        void run(int v);
+    }
+
+    private void askNumber(String title, String sub, int cur, final int min, final int max,
+                           final NumOk ok) {
+        final EditText et = new EditText(this);
+        et.setInputType(InputType.TYPE_CLASS_NUMBER);
+        et.setText(String.valueOf(cur));
+        et.setSelectAllOnFocus(true);
+
+        FrameLayout wrap = new FrameLayout(this);
+        int p = Ui.dp(this, 20);
+        wrap.setPadding(p, Ui.dp(this, 6), p, 0);
+        wrap.addView(et);
+
+        final AlertDialog d = new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(sub + "（" + min + "–" + max + "）")
+                .setView(wrap)
+                .setPositiveButton("好", null)
+                .setNegativeButton("算了", null)
+                .create();
+        d.setOnShowListener(x -> d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            int val = Limits.parse(et.getText().toString(), min, max);
+            if (val < 0) {
+                et.setError(Limits.hint(min, max));
+                return;
+            }
+            ok.run(val);
+            d.dismiss();
+        }));
+        d.show();
     }
 
     private void toggle() {

@@ -2,9 +2,11 @@ package com.scrollguard;
 
 import android.app.Application;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import org.junit.Before;
@@ -14,6 +16,8 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowAlertDialog;
+import org.robolectric.shadows.ShadowLooper;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -93,6 +97,85 @@ public class MainActivityTest {
 
         assertTrue("得提醒悬浮窗没开",
                 hasText(a.findViewById(android.R.id.content), "悬浮窗没开 —— 到点了也盖不住。"));
+    }
+
+    /** 时长是"自己填"，不是从五个选项里挑：点开、敲 7、存进去 */
+    @Test
+    public void limitIsTypedInMinutes() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        View row = findClickableRow(a.findViewById(android.R.id.content), "连着刷多久就拦");
+        assertNotNull("规则里找不到改时长的那一行", row);
+        row.performClick();
+        ShadowLooper.shadowMainLooper().idle();   // 让 onShow 里的挂载先跑完
+
+        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull("点开没弹框", d);
+        EditText et = findEditText(d.getWindow().getDecorView());
+        assertNotNull("框里没有输入的地方", et);
+        assertEquals("框里该是现在的值", "10", et.getText().toString());
+
+        et.setText("7");
+        d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+
+        assertEquals("填 7 就该存 7", 7L, Prefs.limitMin(app));
+        assertFalse("存下了框该关", d.isShowing());
+    }
+
+    /** 填了 0 或者乱敲，不许把设置改坏，也不许把框关掉 */
+    @Test
+    public void badLimitInputIsRejected() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        findClickableRow(a.findViewById(android.R.id.content), "连着刷多久就拦").performClick();
+        ShadowLooper.shadowMainLooper().idle();
+        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
+        EditText et = findEditText(d.getWindow().getDecorView());
+
+        et.setText("0");
+        d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+
+        assertEquals("不该改动", 10L, Prefs.limitMin(app));
+        assertNotNull("得提示填错了", et.getError());
+        assertTrue("填错了不该关掉框", d.isShowing());
+
+        et.setText("601");
+        d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        assertEquals("超过上限也不该改", 10L, Prefs.limitMin(app));
+    }
+
+    private static View findClickableRow(View v, String title) {
+        if (v instanceof ViewGroup && !(v instanceof TextView)) {
+            ViewGroup g = (ViewGroup) v;
+            if (g.isClickable() && hasText(g, title)) {
+                return g;
+            }
+            for (int i = 0; i < g.getChildCount(); i++) {
+                View r = findClickableRow(g.getChildAt(i), title);
+                if (r != null) {
+                    return r;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static EditText findEditText(View v) {
+        if (v instanceof EditText) {
+            return (EditText) v;
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) {
+                EditText e = findEditText(g.getChildAt(i));
+                if (e != null) {
+                    return e;
+                }
+            }
+        }
+        return null;
     }
 
     private static boolean hasText(View v, String what) {

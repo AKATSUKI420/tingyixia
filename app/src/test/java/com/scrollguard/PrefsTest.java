@@ -147,4 +147,17 @@ public class PrefsTest {
         SharedPreferences sp = c().getSharedPreferences("guard", Context.MODE_PRIVATE);
         assertEquals(45L, sp.getLong("limit_min", 0L));
     }
+
+    /** 时长可以填成任意整数分钟，但会被夹在 1–600 里，读出来也不越界 */
+    @Test
+    public void limitIsClampedToRange() {
+        Prefs.setLimitMin(c(), 37L);
+        assertEquals(37L, Prefs.limitMin(c()));
+
+        Prefs.setLimitMin(c(), 0L);
+        assertEquals("0 分钟等于不设防，拉到下限", 1L, Prefs.limitMin(c()));
+
+        Prefs.setLimitMin(c(), 99999L);
+        assertEquals("太大就拉回上限", 600L, Prefs.limitMin(c()));
+    }
 }
