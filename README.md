@@ -257,3 +257,10 @@ MuMu 没开就自动开，`adb connect` 等到开机完，装 `dist\` 里最新�
 几个省事的地方：MuMu 会自动给新装的应用打开无障碍（不用手点）；它有 root（`adb shell su 0 …`），要直接改 `shared_prefs/guard.xml` 造数据也行——注意重定向要放进 `su 0 sh -c '…'` 里面，否则是在非 root 外壳里执行，会 `Permission denied`。
 
 > 别回头去折腾 Android Studio 的 AVD：AEHD 驱动装得上、镜像也有，但这台机器**开窗口 + 走宿主 GPU 会整机硬重启**（Kernel-Power 41 / WHEA fatal，隔天一次的老毛病，跟模拟器只是撞上了）。真要 AVD 只能 `-no-window -gpu swiftshader_indirect`，而那样还得手动给它开无障碍，不如直接用 MuMu。
+
+---
+
+## 11. 许可
+
+MIT，全文见 [LICENSE](LICENSE)。版权行写的是 `Copyright (c) 2026 MOSS`（取自这台机器的 git 用户名），要换名字或年份直接改那一行就行。
+
