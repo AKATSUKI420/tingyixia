@@ -136,18 +136,39 @@ public class GuardServiceTest {
         assertEquals(0, Prefs.todayLocks(app));
     }
 
+    /** v1.1：切到别的 App 只是暂停，攒下的时间不清零 */
     @Test
-    public void switchingAwayResetsTheCount() {
+    public void switchingAwayKeepsTheCount() {
         GuardState.get().fgPackage = Prefs.DOUYIN;
         start();
         idle(30_000);
-        assertTrue(GuardState.get().countedMs > 0L);
+        long kept = GuardState.get().countedMs;
+        assertTrue(kept >= 29_000L);
 
         GuardState.get().fgPackage = "";
-        idle(5_000);
+        idle(10_000);
 
-        assertEquals(0L, GuardState.get().countedMs);
+        assertEquals("切走不该清零", kept, GuardState.get().countedMs);
         assertFalse(GuardState.get().locked);
+    }
+
+    /** v1.1：切走再回来，接着攒，攒满总时长照样拦 */
+    @Test
+    public void comingBackStillLocksAtTheTotal() {
+        GuardState.get().fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(30_000);
+        GuardState.get().fgPackage = "";
+        idle(10_000);
+        assertFalse("才攒了 30 秒，不该拦", GuardState.get().locked);
+
+        GuardState.get().fgPackage = Prefs.DOUYIN;
+        idle(31_000);
+
+        assertTrue("回来接着攒满一分钟就该拦", GuardState.get().locked);
+        assertEquals(1, Prefs.todayLocks(app));
+        assertTrue(overlayOf(svc).isShowing());
     }
 
     @Test

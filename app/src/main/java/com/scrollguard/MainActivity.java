@@ -132,7 +132,8 @@ public class MainActivity extends Activity {
         root.addView(rules);
 
         TextView note = new TextView(this);
-        note.setText("竖着拿、在抖音或 B 站里、连着看才算。切走、熄屏、横过来、停下来超过两三秒，都会清零重来。");
+        note.setText("竖着拿、在抖音或 B 站里、连着看才算。切走、熄屏、横过来只是暂停计时，"
+                + "攒下的时间不清零；只有输对密码才从零开始。");
         note.setTextSize(12);
         note.setTextColor(Ui.col(this, R.color.dim));
         note.setLineSpacing(Ui.dp(this, 3), 1f);

@@ -7,7 +7,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
- * M3 · 计时口径。对应 PRD 第 10 节 D 组九条。
+ * M3 · 计时口径。对应 PRD 第 10 节 D 组（v1.1 起：切走不清零）。
  * 纯逻辑，不需要 Android 运行时。
  */
 public class TickerTest {
@@ -28,27 +28,25 @@ public class TickerTest {
         assertEquals(60000L, t.countedMs());
     }
 
-    /** D2：切走 5 秒再回来，从零开始 */
+    /** D2（v1.1）：切走再回来不清零，攒下的时间接着算 */
     @Test
-    public void d2_leavingFiveSecondsResets() {
+    public void d2_leavingDoesNotReset() {
         Ticker t = walk(new Ticker(), 30, true, 10 * MIN);
         assertEquals(30000L, t.countedMs());
 
         walk(t, 5, false, 10 * MIN);
-        assertEquals("离开 5 秒应该清零", 0L, t.countedMs());
+        assertEquals("切走 5 秒不该清零，也不该涨", 30000L, t.countedMs());
 
         walk(t, 3, true, 10 * MIN);
-        assertEquals("回来之后重新算", 3000L, t.countedMs());
+        assertEquals("回来接着攒", 33000L, t.countedMs());
     }
 
-    /** D2 的边界：只停两秒还没到 2.5 秒，不该清零 */
+    /** 切走很久也不清零：视频停了、App 换了、屏幕黑了，攒的都还在 */
     @Test
-    public void shortLeaveKeepsCounting() {
+    public void longLeaveKeepsTheCount() {
         Ticker t = walk(new Ticker(), 30, true, 10 * MIN);
-        walk(t, 2, false, 10 * MIN);
-        assertEquals(30000L, t.countedMs());
-        walk(t, 3, false, 10 * MIN);
-        assertEquals("第 5 秒时已经超过 2.5 秒，必须清零", 0L, t.countedMs());
+        walk(t, 600, false, 10 * MIN);
+        assertEquals("走开十分钟回来还是那 30 秒", 30000L, t.countedMs());
     }
 
     /** D3：横过来不算 */
@@ -143,12 +141,12 @@ public class TickerTest {
         assertEquals("取走落盘的量不影响连续时长", 20000L, t.countedMs());
     }
 
-    /** 落盘的量不会因为清零而丢：离开时已经攒下的时间照样算进今天 */
+    /** 落盘的量不会因为离开而丢：走开时已经攒下的时间照样算进今天 */
     @Test
-    public void pendingSurvivesReset() {
+    public void pendingSurvivesLeaving() {
         Ticker t = walk(new Ticker(), 20, true, 10 * MIN);
         walk(t, 5, false, 10 * MIN);
-        assertEquals(0L, t.countedMs());
+        assertEquals(20000L, t.countedMs());
         assertEquals(20000L, t.pendingMs());
     }
 
@@ -193,9 +191,9 @@ public class TickerTest {
         assertEquals("清零之后是新一轮", 1, again);
     }
 
-    /** 离开超过 2.5 秒再回来，也算新一轮，能再拦一次 */
+    /** v1.1：切走不会重新武装——拦过一次之后，只有解锁（resetCounting）才算新一轮 */
     @Test
-    public void reArmsAfterLeaving() {
+    public void leavingDoesNotRearm() {
         Ticker t = new Ticker();
         int fires = 0;
         for (int i = 0; i < 70; i++) {
@@ -203,16 +201,27 @@ public class TickerTest {
                 fires++;
             }
         }
+        assertEquals(1, fires);
+
         for (int i = 0; i < 5; i++) {
             t.advance(1000L, false, 60_000L);
         }
-        assertEquals(0L, t.countedMs());
+        assertEquals("切走不该清掉攒下的时间", 70_000L, t.countedMs());
 
         for (int i = 0; i < 70; i++) {
             if (t.advance(1000L, true, 60_000L)) {
                 fires++;
             }
         }
-        assertEquals("离开过就算新一轮", 2, fires);
+        assertEquals("没解锁就不该再拦一次", 1, fires);
+
+        t.resetCounting();
+        int again = 0;
+        for (int i = 0; i < 70; i++) {
+            if (t.advance(1000L, true, 60_000L)) {
+                again++;
+            }
+        }
+        assertEquals("解锁之后才是新一轮", 1, again);
     }
 }

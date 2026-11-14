@@ -3,14 +3,14 @@ package com.scrollguard;
 /**
  * 计时口径的唯一实现。
  *
- * <p>GuardService 每秒把「这一刻算不算数」喂进来，由这里决定：连续时长涨不涨、
- * 离开多久清零、攒够多少该落盘、什么时候该拦。抽成一个不碰 Android 的类，
- * 是为了这九种情况能在没有手机的情况下逐条测出来（见 DEVPLAN 的 M3）。
+ * <p>GuardService 每秒把「这一刻算不算数」喂进来，由这里决定：时长涨不涨、攒够多少该落盘、
+ * 什么时候该拦。抽成一个不碰 Android 的类，是为了这些情况能在没有手机的情况下逐条测出来
+ * （见 DEVPLAN 的 M3）。
+ *
+ * <p>口径（v1.1 起）：只有「算数」的那一秒才往连续时长里加；切走、熄屏、横过来只是**暂停**，
+ * 攒下的时长不清零。唯一会清零的时候是解锁之后。
  */
 public final class Ticker {
-
-    /** 连续不满足条件超过这么久，连续时长清零 */
-    public static final long IDLE_RESET_MS = 2500L;
 
     /** 每攒够这么久，把「今天看了多久」落盘一次 */
     public static final long FLUSH_EVERY_MS = 15000L;
@@ -85,15 +85,10 @@ public final class Ticker {
             return false;
         }
         idleMs += dt;
-        if (idleMs >= IDLE_RESET_MS) {
-            idleMs = 0L;
-            countedMs = 0L;
-            fired = false;
-        }
         return false;
     }
 
-    /** 解锁或没拦成之后清空连续时长；今天的统计不动 */
+    /** 解锁之后清空连续时长；今天的统计不动 */
     public void resetCounting() {
         countedMs = 0L;
         idleMs = 0L;
