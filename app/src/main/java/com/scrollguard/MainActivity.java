@@ -19,7 +19,6 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -88,15 +87,21 @@ public class MainActivity extends Activity {
         root.removeAllViews();
 
         TextView title = new TextView(this);
+        title.setId(R.id.page_title);
         title.setText("停一下");
-        title.setTextSize(30);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
+        title.setTextSize(Ui.TITLE_SP);
+        title.setTypeface(Ui.bold(this));
+        title.setLetterSpacing(-0.02f);
         title.setTextColor(Ui.col(this, R.color.text));
+        title.setIncludeFontPadding(false);
         root.addView(title);
 
         statusLine = new TextView(this);
-        statusLine.setTextSize(13);
+        statusLine.setId(R.id.status_line);
+        statusLine.setTextSize(15);
         statusLine.setTextColor(Ui.col(this, R.color.dim));
+        statusLine.setIncludeFontPadding(false);
+        statusLine.setLineSpacing(Ui.dp(this, 2), 1f);
         LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         slp.topMargin = Ui.dp(this, 8);
@@ -120,24 +125,21 @@ public class MainActivity extends Activity {
         LinearLayout scopeRow = Ui.row(this, "拦截范围",
                 Scope.isGlobal(this) ? "桌面、系统界面和本应用不算" : "只算抖音 / B 站里的竖屏滑动",
                 scopeVal);
-        scopeRow.setClickable(true);
-        scopeRow.setOnClickListener(v -> pickScope());
+        Ui.tap(scopeRow, this::pickScope);
         rules.addView(scopeRow);
         rules.addView(Ui.divider(this));
 
         TextView dur = Ui.value(this, Text.limit(Prefs.limitMin(this)));
         dur.setTextColor(Ui.col(this, R.color.text));
         LinearLayout r1 = Ui.row(this, "连着刷多久就拦", null, dur);
-        r1.setClickable(true);
-        r1.setOnClickListener(v -> pickLimit());
+        Ui.tap(r1, this::pickLimit);
         rules.addView(r1);
         rules.addView(Ui.divider(this));
 
         TextView autoVal = Ui.value(this, AutoUnlock.label(Prefs.autoUnlockMin(this)));
         autoVal.setTextColor(Ui.col(this, R.color.text));
         LinearLayout r2 = Ui.row(this, "锁屏后多久自动解开", null, autoVal);
-        r2.setClickable(true);
-        r2.setOnClickListener(v -> pickAutoUnlock());
+        Ui.tap(r2, this::pickAutoUnlock);
         rules.addView(r2);
         rules.addView(Ui.divider(this));
 
@@ -161,14 +163,14 @@ public class MainActivity extends Activity {
             note.setText("竖着拿、在抖音或 B 站里、连着看才算。切走、熄屏、横过来只是暂停计时，"
                     + "攒下的时间不清零；只有输对密码才从零开始。");
         }
-        note.setTextSize(12);
+        note.setTextSize(13);
         note.setTextColor(Ui.col(this, R.color.dim));
         note.setLineSpacing(Ui.dp(this, 3), 1f);
         LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        nlp.leftMargin = Ui.dp(this, 6);
-        nlp.rightMargin = Ui.dp(this, 6);
-        nlp.topMargin = Ui.dp(this, 12);
+        nlp.leftMargin = Ui.dp(this, 16);
+        nlp.rightMargin = Ui.dp(this, 16);
+        nlp.topMargin = Ui.dp(this, 8);
         root.addView(note, nlp);
 
         // 权限
@@ -210,9 +212,10 @@ public class MainActivity extends Activity {
 
         boolean on = Prefs.enabled(this);
         TextView btn = Ui.button(this, on ? "关掉防护" : "开起来", on);
+        btn.setId(R.id.primary_button);
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        blp.topMargin = Ui.dp(this, 26);
+        blp.topMargin = Ui.dp(this, 24);
         root.addView(btn, blp);
         btn.setOnClickListener(v -> toggle());
 
@@ -220,10 +223,10 @@ public class MainActivity extends Activity {
         Ui.header(root, "别的");
         LinearLayout other = Ui.card(this);
 
-        other.addView(tapRow(Ui.row(this, "试一下拦截", "看看盖上去是什么样", Ui.value(this, "›")),
+        other.addView(tapRow(Ui.row(this, "试一下拦截", "看看盖上去是什么样", chevron()),
                 this::testLock));
         other.addView(Ui.divider(this));
-        other.addView(tapRow(Ui.row(this, "换密码", null, Ui.value(this, "›")),
+        other.addView(tapRow(Ui.row(this, "换密码", null, chevron()),
                 () -> requirePin("先输现在的密码", pin -> {
                     if (!Gate.check(this, pin)) {
                         return false;
@@ -234,30 +237,34 @@ public class MainActivity extends Activity {
                     return true;
                 })));
         other.addView(Ui.divider(this));
-        other.addView(tapRow(Ui.row(this, "忘掉密码", "清掉全部数据，从头再设", Ui.value(this, "›")),
+        other.addView(tapRow(Ui.row(this, "忘掉密码", "清掉全部数据，从头再设", chevron()),
                 this::wipeConfirm));
         root.addView(other);
 
         TextView foot = new TextView(this);
         foot.setText("数据都在这台手机上 · 不联网 · 不上传");
-        foot.setTextSize(11);
-        foot.setTextColor(0x66FFFFFF);
+        foot.setTextSize(12);
+        foot.setTextColor(Ui.col(this, R.color.dim2));
         foot.setGravity(Gravity.CENTER_HORIZONTAL);
         LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        flp.topMargin = Ui.dp(this, 28);
+        flp.topMargin = Ui.dp(this, 24);
         root.addView(foot, flp);
     }
 
     private LinearLayout tapRow(LinearLayout row, Runnable action) {
-        row.setClickable(true);
-        row.setFocusable(true);
-        row.setOnClickListener(v -> action.run());
+        Ui.tap(row, action);
         return row;
     }
 
-    private Switch switchTarget(final String pkg) {
-        Switch sw = new Switch(this);
+    private TextView chevron() {
+        TextView t = Ui.plain(this, "›", 20, R.color.dim2);
+        t.setIncludeFontPadding(false);
+        return t;
+    }
+
+    private IosSwitch switchTarget(final String pkg) {
+        IosSwitch sw = new IosSwitch(this);
         sw.setChecked(Prefs.targets(this).contains(pkg));
         sw.setOnCheckedChangeListener((v, checked) -> {
             Prefs.setTarget(this, pkg, checked);
@@ -269,8 +276,8 @@ public class MainActivity extends Activity {
         return sw;
     }
 
-    private Switch strictSwitch() {
-        Switch sw = new Switch(this);
+    private IosSwitch strictSwitch() {
+        IosSwitch sw = new IosSwitch(this);
         sw.setChecked(Prefs.strict(this));
         sw.setOnCheckedChangeListener((v, checked) -> Prefs.setStrict(this, checked));
         return sw;
@@ -281,30 +288,36 @@ public class MainActivity extends Activity {
             return;
         }
         if (!Prefs.enabled(this)) {
-            statusLine.setText("现在关着，什么都不管。");
+            setStatus("现在关着，什么都不管。", R.color.dim);
             return;
         }
         if (!Env.a11y(this)) {
-            statusLine.setText("无障碍没开 —— 现在其实拦不住。");
+            setStatus("无障碍没开 —— 现在其实拦不住。", R.color.bad);
             return;
         }
         if (!Env.overlay(this)) {
-            statusLine.setText("悬浮窗没开 —— 到点了也盖不住。");
+            setStatus("悬浮窗没开 —— 到点了也盖不住。", R.color.bad);
             return;
         }
         GuardState st = GuardState.get();
         if (!st.serviceRunning) {
-            statusLine.setText("计时服务不在，点下面的按钮重新开一下。");
+            setStatus("计时服务不在，点下面的按钮重新开一下。", R.color.warn);
             return;
         }
         if (st.countedMs >= 1000L) {
-            statusLine.setText("正在计时 " + Text.mmss(st.countedMs)
-                    + " / " + Text.limit(Prefs.limitMin(this)));
+            setStatus("正在计时 " + Text.mmss(st.countedMs)
+                    + " / " + Text.limit(Prefs.limitMin(this)), R.color.good);
         } else {
-            statusLine.setText(Scope.isGlobal(this)
-                    ? "在看着 · 现在没在用"
-                    : "在看着 · 现在没在刷");
+            setStatus(Scope.isGlobal(this) ? "在看着 · 现在没在用" : "在看着 · 现在没在刷",
+                    R.color.accent);
         }
+    }
+
+    private void setStatus(String text, int dotColor) {
+        statusLine.setText(text);
+        statusLine.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                Ui.dot(this, Ui.col(this, dotColor)), null, null, null);
+        statusLine.setCompoundDrawablePadding(Ui.dp(this, 8));
     }
 
     // ------------------------------------------------------------------ 动作

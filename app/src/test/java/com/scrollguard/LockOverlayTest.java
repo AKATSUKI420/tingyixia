@@ -93,6 +93,23 @@ public class LockOverlayTest {
     }
 
     @Test
+    public void lockScreenUsesIOSLayout() {
+        show(10);
+        View v = view(overlay);
+
+        assertNotNull("锁屏顶上该有个小锁图标", v.findViewById(R.id.lock_icon));
+
+        TextView title = v.findViewById(R.id.lock_title);
+        assertEquals(Ui.sp(app, 32), title.getTextSize(), 1f);
+
+        TextView kicker = v.findViewById(R.id.lock_kicker);
+        assertEquals(Ui.sp(app, 13), kicker.getTextSize(), 1f);
+
+        TextView footer = v.findViewById(R.id.lock_footer);
+        assertEquals(Ui.sp(app, 13), footer.getTextSize(), 1f);
+    }
+
+    @Test
     public void footerKeepsCounting() {
         show(10);
 

@@ -13,33 +13,41 @@
         android:orientation="vertical"
         android:paddingLeft="24dp"
         android:paddingRight="24dp"
-        android:paddingTop="72dp"
-        android:paddingBottom="32dp">
+        android:paddingTop="40dp"
+        android:paddingBottom="24dp">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_lock"
+            android:tint="@color/accent" />
 
         <TextView
             android:id="@+id/setup_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
             android:gravity="center"
             android:text="设一个密码"
             android:textColor="@color/text"
-            android:textSize="24sp"
+            android:textSize="32sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/setup_sub"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="8dp"
             android:gravity="center"
             android:text="6 位数字，忘了解不开"
             android:textColor="@color/dim"
-            android:textSize="14sp" />
+            android:textSize="15sp" />
 
         <com.scrollguard.PinPadView
             android:id="@+id/setup_pad"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="30dp" />
+            android:layout_marginTop="24dp" />
     </LinearLayout>
 </ScrollView>

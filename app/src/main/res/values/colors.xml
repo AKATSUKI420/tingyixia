@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg">#FF0B0B12</color>
-    <color name="card">#FF15151F</color>
-    <color name="text">#FFF2F2F7</color>
-    <color name="dim">#FF9A9AAB</color>
-    <color name="accent">#FFFF6B57</color>
-    <color name="good">#FF4ADE80</color>
-    <color name="bad">#FFFF6B57</color>
-    <color name="ic_launcher_bg">#FF14141C</color>
+    <!-- iOS 深色模式的基础色板：纯黑底、分组卡片、系统蓝/绿/红 -->
+    <color name="bg">#FF000000</color>
+    <color name="card">#FF1C1C1E</color>
+    <color name="card_pressed">#FF2C2C2E</color>
+    <color name="text">#FFFFFFFF</color>
+    <color name="dim">#FF8E8E93</color>
+    <color name="dim2">#FF636366</color>
+    <color name="separator">#FF38383A</color>
+    <color name="accent">#FF0A84FF</color>
+    <color name="good">#FF30D158</color>
+    <color name="bad">#FFFF453A</color>
+    <color name="warn">#FFFF9F0A</color>
+    <color name="ic_launcher_bg">#FF000000</color>
 </resources>

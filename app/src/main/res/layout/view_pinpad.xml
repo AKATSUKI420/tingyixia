@@ -13,13 +13,13 @@
         android:minHeight="18dp"
         android:text=""
         android:textColor="@color/dim"
-        android:textSize="13sp" />
+        android:textSize="14sp" />
 
     <LinearLayout
         android:id="@+id/pin_dots"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="12dp"
         android:gravity="center"
         android:orientation="horizontal" />
 
@@ -27,7 +27,7 @@
         android:id="@+id/pin_keys"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="22dp"
+        android:layout_marginTop="20dp"
         android:columnCount="3"
         android:rowCount="4">
 
@@ -80,7 +80,7 @@
             android:id="@+id/kc"
             style="@style/PinKey"
             android:text="清空"
-            android:textSize="15sp" />
+            android:textSize="13sp" />
 
         <Button
             android:id="@+id/k0"
@@ -91,6 +91,6 @@
             android:id="@+id/kd"
             style="@style/PinKey"
             android:text="退格"
-            android:textSize="15sp" />
+            android:textSize="13sp" />
     </GridLayout>
 </LinearLayout>

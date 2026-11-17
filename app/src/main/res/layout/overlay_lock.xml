@@ -2,10 +2,11 @@
 <com.scrollguard.LockRoot xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F70A0A10"
+    android:background="@drawable/lock_bg"
     android:clickable="true"
     android:focusable="true"
-    android:focusableInTouchMode="true">
+    android:focusableInTouchMode="true"
+    android:fitsSystemWindows="true">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -20,14 +21,24 @@
             android:orientation="vertical"
             android:paddingLeft="24dp"
             android:paddingRight="24dp"
-            android:paddingTop="64dp"
-            android:paddingBottom="32dp">
+            android:paddingTop="28dp"
+            android:paddingBottom="24dp">
+
+            <ImageView
+                android:id="@+id/lock_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:alpha="0.92"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_lock"
+                android:tint="@color/text" />
 
             <TextView
                 android:id="@+id/lock_kicker"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.22"
+                android:layout_marginTop="10dp"
+                android:letterSpacing="0.28"
                 android:text="停 一 下"
                 android:textColor="@color/accent"
                 android:textSize="13sp" />
@@ -36,38 +47,39 @@
                 android:id="@+id/lock_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:gravity="center"
+                android:lineSpacingExtra="2dp"
                 android:text="已经刷了 10 分钟"
                 android:textColor="@color/text"
-                android:textSize="25sp"
+                android:textSize="32sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/lock_sub"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
                 android:gravity="center"
                 android:text="输密码才能回去"
                 android:textColor="@color/dim"
-                android:textSize="14sp" />
+                android:textSize="15sp" />
 
             <com.scrollguard.PinPadView
                 android:id="@+id/pad"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="30dp" />
+                android:layout_marginTop="18dp" />
 
             <TextView
                 android:id="@+id/lock_footer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
+                android:layout_marginTop="14dp"
                 android:gravity="center"
                 android:text=""
-                android:textColor="#5CFFFFFF"
-                android:textSize="12sp" />
+                android:textColor="@color/dim"
+                android:textSize="13sp" />
         </LinearLayout>
     </ScrollView>
 </com.scrollguard.LockRoot>

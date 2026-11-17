@@ -43,8 +43,8 @@ public class PinPadView extends LinearLayout {
         dots = findViewById(R.id.pin_dots);
         dots.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
 
-        dotSize = Ui.dp(c, 11);
-        dotGap = Ui.dp(c, 13);
+        dotSize = Ui.dp(c, 10);
+        dotGap = Ui.dp(c, 16);
         normalColor = Ui.col(c, R.color.dim);
         errorColor = Ui.col(c, R.color.bad);
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="page_title" type="id" />
+    <item name="status_line" type="id" />
+    <item name="primary_button" type="id" />
+</resources>
