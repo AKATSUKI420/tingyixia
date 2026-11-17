@@ -37,6 +37,8 @@ public class TextTest {
     @Test
     public void lockTitle() {
         assertEquals("已经刷了 10 分钟", Text.lockTitle(10));
+        assertEquals("已经刷了 10 分钟", Text.lockTitle(10, false));
+        assertEquals("已经用了 10 分钟", Text.lockTitle(10, true));
     }
 
     /** 遮罩底部那行，三段文案在 PRD 里是定死的 */

@@ -55,14 +55,28 @@ public class ShieldTest {
     public void scrollInATargetAppCounts() {
         assertFalse(st.scrolledWithin(1000L));
 
-        Shield.onScroll(st, Prefs.targets(app), Prefs.BILI);
+        Shield.onScroll(st, Prefs.targets(app), Prefs.BILI, false);
 
         assertTrue(st.scrolledWithin(1000L));
     }
 
     @Test
     public void scrollElsewhereIsIgnored() {
-        Shield.onScroll(st, Prefs.targets(app), "com.tencent.mm");
+        Shield.onScroll(st, Prefs.targets(app), "com.tencent.mm", false);
+
+        assertFalse(st.scrolledWithin(1000L));
+    }
+
+    @Test
+    public void scrollAnywhereCountsInGlobalMode() {
+        Shield.onScroll(st, Prefs.targets(app), "com.tencent.mm", true);
+
+        assertTrue("全局模式下别的 App 滑动也算动静", st.scrolledWithin(1000L));
+    }
+
+    @Test
+    public void systemScrollDoesNotCountEvenInGlobalMode() {
+        Shield.onScroll(st, Prefs.targets(app), "com.android.systemui", true);
 
         assertFalse(st.scrolledWithin(1000L));
     }
@@ -72,7 +86,7 @@ public class ShieldTest {
         st.fgPackage = Prefs.DOUYIN;
 
         Shield.onWindow(st, null);
-        Shield.onScroll(st, Prefs.targets(app), null);
+        Shield.onScroll(st, Prefs.targets(app), null, false);
 
         assertEquals(Prefs.DOUYIN, st.fgPackage);
         assertFalse(st.scrolledWithin(1000L));

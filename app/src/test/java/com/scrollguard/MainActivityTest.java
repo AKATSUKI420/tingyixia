@@ -213,6 +213,55 @@ public class MainActivityTest {
         assertTrue("填错了不该关掉框", d.isShowing());
     }
 
+    // ---------- 问题2：只锁 App / 锁全局 ----------
+
+    @Test
+    public void scopeDefaultsToAppOnlyWithTargetSwitches() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        assertTrue("规则里该有拦截范围", hasText(a.findViewById(android.R.id.content), "拦截范围"));
+        assertTrue(hasText(a.findViewById(android.R.id.content), Scope.LABEL_APP));
+        assertTrue(hasText(a.findViewById(android.R.id.content), "抖音"));
+        assertTrue(hasText(a.findViewById(android.R.id.content), "哔哩哔哩"));
+    }
+
+    @Test
+    public void scopeCanSwitchToTheWholePhone() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        View row = findClickableRow(a.findViewById(android.R.id.content), "拦截范围");
+        assertNotNull("规则里找不到拦截范围那一行", row);
+        row.performClick();
+        ShadowLooper.shadowMainLooper().idle();
+
+        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull("点开没弹框", d);
+        d.getListView().performItemClick(null, 1, 1);
+        ShadowLooper.shadowMainLooper().idle();
+
+        assertEquals("选了整台手机", Scope.GLOBAL, Prefs.scope(app));
+        assertFalse("选完该关框", d.isShowing());
+        assertTrue(hasText(a.findViewById(android.R.id.content), Scope.LABEL_GLOBAL));
+        assertTrue("全局模式该有一句说明",
+                hasText(a.findViewById(android.R.id.content), "不管哪个应用"));
+        assertFalse("全局模式不该再显示单个 App 开关",
+                hasText(a.findViewById(android.R.id.content), "抖音"));
+        assertFalse(hasText(a.findViewById(android.R.id.content), "哔哩哔哩"));
+    }
+
+    @Test
+    public void globalScopeIsRememberedWhenReopening() {
+        Pin.save(app, "123456");
+        Prefs.setScope(app, Scope.GLOBAL);
+        MainActivity a = open();
+
+        assertTrue(hasText(a.findViewById(android.R.id.content), Scope.LABEL_GLOBAL));
+        assertTrue(hasText(a.findViewById(android.R.id.content), "不管哪个应用"));
+        assertFalse(hasText(a.findViewById(android.R.id.content), "抖音"));
+    }
+
     private static View findClickableRow(View v, String title) {        if (v instanceof ViewGroup && !(v instanceof TextView)) {
             ViewGroup g = (ViewGroup) v;
             if (g.isClickable() && hasText(g, title)) {

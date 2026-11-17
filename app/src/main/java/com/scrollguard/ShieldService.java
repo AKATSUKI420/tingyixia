@@ -31,7 +31,7 @@ public class ShieldService extends AccessibilityService {
         if (e.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             Shield.onWindow(st, pkg);
         } else if (e.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-            Shield.onScroll(st, Prefs.targets(this), pkg);
+            Shield.onScroll(st, Prefs.targets(this), pkg, Scope.isGlobal(this));
         }
     }
 

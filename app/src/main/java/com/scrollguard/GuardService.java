@@ -35,6 +35,7 @@ public class GuardService extends Service {
     private long lastTick;
     private long lastPlayCheck;
     private boolean playValue = true;
+    private String notiScope;
 
     private final Runnable loop = new Runnable() {
         @Override
@@ -81,7 +82,8 @@ public class GuardService extends Service {
         if (overlay.isShowing()) {
             return;
         }
-        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this), () -> {
+        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this),
+                Scope.isGlobal(this), () -> {
             GuardState s = GuardState.get();
             ticker.resetCounting();
             s.countedMs = 0L;
@@ -104,14 +106,20 @@ public class GuardService extends Service {
             return;
         }
 
+        String scope = Prefs.scope(this);
+        if (!scope.equals(notiScope)) {
+            // 范围改了，常驻通知里的说法也跟着换
+            goForeground();
+        }
+
         GuardState st = GuardState.get();
         st.portrait = getResources().getConfiguration().orientation
                 != Configuration.ORIENTATION_LANDSCAPE;
 
         boolean active = Ticker.active(
                 Prefs.strict(this), isPlaying(), st.scrolledWithin(Ticker.SCROLL_WINDOW_MS));
-        boolean counting = Ticker.counts(
-                st.portrait, screenOn(), Prefs.targets(this).contains(st.fgPackage), active);
+        boolean counting = Scope.counts(this, scope, st.portrait, screenOn(), st.fgPackage,
+                Prefs.targets(this).contains(st.fgPackage), active);
 
         boolean due = ticker.advance(dt, counting, Prefs.limitMin(this) * 60000L);
         st.countedMs = ticker.countedMs();
@@ -138,7 +146,8 @@ public class GuardService extends Service {
         }
         st.locked = true;
         Prefs.bumpTodayLocks(this);
-        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this), () -> {
+        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this),
+                Scope.isGlobal(this), () -> {
             GuardState s = GuardState.get();
             ticker.resetCounting();
             s.countedMs = 0L;
@@ -198,7 +207,12 @@ public class GuardService extends Service {
                 this, 0, new Intent(this, MainActivity.class),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        String line = "抖音 / 哔哩哔哩 竖屏连着刷 " + Prefs.limitMin(this) + " 分钟会拦一下";
+        String line;
+        if (Scope.isGlobal(this)) {
+            line = "整台手机连着用 " + Prefs.limitMin(this) + " 分钟会拦一下";
+        } else {
+            line = "抖音 / 哔哩哔哩 竖屏连着刷 " + Prefs.limitMin(this) + " 分钟会拦一下";
+        }
         if (Prefs.autoUnlockMin(this) > 0) {
             line = line + "，锁 " + Prefs.autoUnlockMin(this) + " 分钟后自动解开";
         }
@@ -217,6 +231,7 @@ public class GuardService extends Service {
         } else {
             startForeground(NOTI_ID, n);
         }
+        notiScope = Prefs.scope(this);
     }
 
     @Override

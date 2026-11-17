@@ -87,6 +87,15 @@ public final class Prefs {
         sp(c).edit().putBoolean("strict", v).apply();
     }
 
+    /** 拦截范围：只锁抖音 / B 站（默认），还是整台手机 */
+    public static String scope(Context c) {
+        return Scope.normalize(sp(c).getString("scope", Scope.APP));
+    }
+
+    public static void setScope(Context c, String v) {
+        sp(c).edit().putString("scope", Scope.normalize(v)).apply();
+    }
+
     public static Set<String> targets(Context c) {
         Set<String> def = new HashSet<>();
         def.add(DOUYIN);

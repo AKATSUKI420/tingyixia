@@ -54,6 +54,14 @@ public class LockOverlayTest {
         pad = v.findViewById(R.id.pad);
     }
 
+    private void showGlobal(int limitMin) {
+        unlocked = false;
+        overlay.show(limitMin, AutoUnlock.OFF, true, () -> unlocked = true);
+        View v = view(overlay);
+        assertNotNull("那一层没挂上去", v);
+        pad = v.findViewById(R.id.pad);
+    }
+
     private static View view(LockOverlay o) {
         try {
             Field f = LockOverlay.class.getDeclaredField("view");
@@ -72,6 +80,16 @@ public class LockOverlayTest {
         TextView title = view(overlay).findViewById(R.id.lock_title);
         assertEquals(Text.lockTitle(10), title.getText().toString());
         assertNotNull(view(overlay).findViewById(R.id.pad));
+    }
+
+    /** 全局范围拦下来时说"用了多久"，不是"刷了多久" */
+    @Test
+    public void globalTitleSaysUsedNotScrolled() {
+        showGlobal(10);
+
+        TextView title = view(overlay).findViewById(R.id.lock_title);
+        assertEquals("已经用了 10 分钟", title.getText().toString());
+        assertEquals(Text.lockTitle(10, true), title.getText().toString());
     }
 
     @Test

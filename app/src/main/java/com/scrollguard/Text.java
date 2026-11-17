@@ -40,7 +40,11 @@ public final class Text {
     }
 
     public static String lockTitle(long min) {
-        return "已经刷了 " + min + " 分钟";
+        return lockTitle(min, false);
+    }
+
+    public static String lockTitle(long min, boolean global) {
+        return global ? "已经用了 " + min + " 分钟" : "已经刷了 " + min + " 分钟";
     }
 
     public static String lockFooter(long sec) {

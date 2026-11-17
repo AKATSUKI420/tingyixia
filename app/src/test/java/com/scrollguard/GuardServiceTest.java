@@ -2,6 +2,8 @@ package com.scrollguard;
 
 import android.app.Application;
 import android.content.Intent;
+import android.view.View;
+import android.widget.TextView;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -64,6 +66,17 @@ public class GuardServiceTest {
             Field f = GuardService.class.getDeclaredField("overlay");
             f.setAccessible(true);
             return (LockOverlay) f.get(s);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private static String titleOf(GuardService s) {
+        try {
+            Field f = LockOverlay.class.getDeclaredField("view");
+            f.setAccessible(true);
+            View v = (View) f.get(overlayOf(s));
+            return ((TextView) v.findViewById(R.id.lock_title)).getText().toString();
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
@@ -133,6 +146,61 @@ public class GuardServiceTest {
         idle(61_000);
 
         assertFalse(GuardState.get().locked);
+        assertEquals(0, Prefs.todayLocks(app));
+    }
+
+    // ---------- 问题2：只锁 App / 锁全局 ----------
+
+    @Test
+    public void globalModeCountsAnyAppEvenInLandscape() {
+        Prefs.setScope(app, Scope.GLOBAL);
+        RuntimeEnvironment.setQualifiers("+land");
+        GuardState.get().fgPackage = "com.tencent.mm";
+        GuardService svc = start();
+
+        idle(61_000);
+
+        assertTrue("全局模式横屏也该拦", overlayOf(svc).isShowing());
+        assertEquals(1, Prefs.todayLocks(app));
+        assertEquals(Text.lockTitle(1, true), titleOf(svc));
+    }
+
+    @Test
+    public void globalModeSkipsOurOwnApp() {
+        Prefs.setScope(app, Scope.GLOBAL);
+        GuardState.get().fgPackage = app.getPackageName();
+        GuardService svc = start();
+
+        idle(61_000);
+
+        assertFalse("在自己首页上不该计时", GuardState.get().locked);
+        assertFalse(overlayOf(svc).isShowing());
+        assertEquals(0, Prefs.todayLocks(app));
+    }
+
+    @Test
+    public void globalModeDoesNotNeedTheTargetSwitches() {
+        Prefs.setScope(app, Scope.GLOBAL);
+        Prefs.setTarget(app, Prefs.DOUYIN, false);
+        Prefs.setTarget(app, Prefs.BILI, false);
+        GuardState.get().fgPackage = "com.tencent.mm";
+        GuardService svc = start();
+
+        idle(61_000);
+
+        assertTrue("全局模式不看那两个开关", overlayOf(svc).isShowing());
+        assertEquals(1, Prefs.todayLocks(app));
+    }
+
+    @Test
+    public void globalModeIgnoresSystemWindows() {
+        Prefs.setScope(app, Scope.GLOBAL);
+        GuardState.get().fgPackage = "com.android.systemui";
+        GuardService svc = start();
+
+        idle(61_000);
+
+        assertFalse(overlayOf(svc).isShowing());
         assertEquals(0, Prefs.todayLocks(app));
     }
 
