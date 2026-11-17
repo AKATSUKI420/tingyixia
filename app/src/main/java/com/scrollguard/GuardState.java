@@ -27,7 +27,7 @@ public final class GuardState {
     /** 计时服务是否在跑 */
     public volatile boolean serviceRunning = false;
 
-    /** 当前前台应用的包名，不知道就是空串 */
+    /** 当前前台应用的包名，不知道就是空串；系统弹窗不覆盖它 */
     public volatile String fgPackage = "";
 
     /** 屏幕是不是竖着的（由计时服务按当前配置判定） */

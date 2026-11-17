@@ -122,8 +122,8 @@ public class MainActivity extends Activity {
 
         TextView scopeVal = Ui.value(this, Scope.label(this));
         scopeVal.setTextColor(Ui.col(this, R.color.text));
-        LinearLayout scopeRow = Ui.row(this, "拦截范围",
-                Scope.isGlobal(this) ? "桌面、系统界面和本应用不算" : "只算抖音 / B 站里的竖屏滑动",
+        LinearLayout scopeRow = Ui.row(this, "遮罩范围",
+                Scope.isGlobal(this) ? "整台手机都算；按 Home 也盖着" : "只算抖音 / B 站；切走就收起",
                 scopeVal);
         Ui.tap(scopeRow, this::pickScope);
         rules.addView(scopeRow);
@@ -158,10 +158,10 @@ public class MainActivity extends Activity {
         TextView note = new TextView(this);
         if (Scope.isGlobal(this)) {
             note.setText("屏幕亮着、手机在用就算，横竖屏都算；桌面、系统界面和本应用不算。"
-                    + "切走、熄屏只是暂停计时，攒下的时间不清零；只有输对密码才从零开始。");
+                    + "按 Home 遮罩也不会消失，直到输密码或自动解开；攒下的时间不清零。");
         } else {
             note.setText("竖着拿、在抖音或 B 站里、连着看才算。切走、熄屏、横过来只是暂停计时，"
-                    + "攒下的时间不清零；只有输对密码才从零开始。");
+                    + "攒下的时间不清零；切走时遮罩自动收起，回来会再盖住。只有输对密码才从零开始。");
         }
         note.setTextSize(13);
         note.setTextColor(Ui.col(this, R.color.dim));
@@ -346,7 +346,7 @@ public class MainActivity extends Activity {
         final String[] labels = {Scope.LABEL_APP, Scope.LABEL_GLOBAL};
         final int checked = Scope.isGlobal(this) ? 1 : 0;
         new AlertDialog.Builder(this)
-                .setTitle("拦截范围")
+                .setTitle("遮罩范围")
                 .setSingleChoiceItems(labels, checked, (d, which) -> {
                     Prefs.setScope(this, which == 0 ? Scope.APP : Scope.GLOBAL);
                     d.dismiss();

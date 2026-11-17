@@ -5,23 +5,25 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 
 /**
- * 拦截范围：只锁抖音 / 哔哩哔哩，还是整台手机都算。
+ * 遮罩范围：只遮罩抖音 / 哔哩哔哩，还是全局遮罩。
  *
- * <p>只锁 App 时沿用原来的口径：竖屏 + 屏幕亮着 + 前台是目标应用 + 有动静。
- * 锁全局时只要屏幕亮着、前台不是桌面 / 系统界面 / 本应用，横竖屏都算。
+ * <p>只遮罩 App 时沿用原来的口径：竖屏 + 屏幕亮着 + 前台是目标应用 + 有动静；
+ * 人切走或回到桌面，遮罩先收起来，回到目标 App 再盖回去。
+ * 全局遮罩时只要屏幕亮着、前台不是桌面 / 系统界面 / 本应用，横竖屏都算；
+ * 遮罩一旦盖上，按 Home 也不会消失。
  */
 public final class Scope {
 
     public static final String APP = "app";
     public static final String GLOBAL = "global";
 
-    public static final String LABEL_APP = "只锁抖音 / 哔哩哔哩";
-    public static final String LABEL_GLOBAL = "整台手机";
+    public static final String LABEL_APP = "只遮罩 App";
+    public static final String LABEL_GLOBAL = "全局遮罩";
 
     private Scope() {
     }
 
-    /** 只认这两个值，别的（包括老版本没存过）都当只锁 App */
+    /** 只认这两个值，别的（包括老版本没存过）都当只遮罩 App */
     public static String normalize(String raw) {
         return GLOBAL.equals(raw) ? GLOBAL : APP;
     }

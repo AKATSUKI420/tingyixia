@@ -87,7 +87,7 @@ public final class Prefs {
         sp(c).edit().putBoolean("strict", v).apply();
     }
 
-    /** 拦截范围：只锁抖音 / B 站（默认），还是整台手机 */
+    /** 遮罩范围：只遮罩 App（默认），还是全局遮罩 */
     public static String scope(Context c) {
         return Scope.normalize(sp(c).getString("scope", Scope.APP));
     }

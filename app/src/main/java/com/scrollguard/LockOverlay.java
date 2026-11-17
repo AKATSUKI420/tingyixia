@@ -26,6 +26,7 @@ public final class LockOverlay {
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private View view;
+    private WindowManager.LayoutParams lp;
     private PinPadView pad;
     private TextView footer;
     private long shownAt;
@@ -59,6 +60,36 @@ public final class LockOverlay {
 
     public boolean isShowing() {
         return view != null;
+    }
+
+    /** 这会儿是不是真的挡在屏幕上；只遮罩 App 时可能还挂着但已经藏起来。 */
+    public boolean isCovering() {
+        return view != null && lp != null
+                && (lp.flags & WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) == 0;
+    }
+
+    /**
+     * 只遮罩 App 时用：切到别处先把这一层藏起来，锁本身还在；
+     * 回到目标 App 再盖回去，不重新计时，也不重复记一次拦截。
+     */
+    public void setCovering(boolean covering) {
+        if (view == null || lp == null || isCovering() == covering) {
+            return;
+        }
+        if (covering) {
+            lp.flags &= ~(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+            lp.alpha = 1f;
+        } else {
+            lp.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+            lp.alpha = 0f;
+        }
+        try {
+            wm.updateViewLayout(view, lp);
+        } catch (Throwable ignored) {
+            // 窗口已经被系统拿掉了，下一次 show 会重新来
+        }
     }
 
     /** 遮罩下面那行字：停了多久；设了自动解开就再缀一句还剩多久。 */
@@ -114,6 +145,7 @@ public final class LockOverlay {
         }
 
         view = v;
+        this.lp = lp;
         onUnlock = unlockCallback;
         shownAt = SystemClock.elapsedRealtime();
         autoUnlockMin = autoMinutes;
@@ -136,6 +168,7 @@ public final class LockOverlay {
         }
         pad = null;
         footer = null;
+        lp = null;
         onUnlock = null;
         checking = false;
         autoUnlockMin = AutoUnlock.OFF;

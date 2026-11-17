@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
 /**
- * M6：只锁 App 和锁全局，两种口径各算哪些时候。
+ * M6：只遮罩 App 和全局遮罩，两种口径各算哪些时候。
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 34)

@@ -149,7 +149,7 @@ public class GuardServiceTest {
         assertEquals(0, Prefs.todayLocks(app));
     }
 
-    // ---------- 问题2：只锁 App / 锁全局 ----------
+    // ---------- 问题2：只遮罩 App / 全局遮罩 ----------
 
     @Test
     public void globalModeCountsAnyAppEvenInLandscape() {
@@ -281,6 +281,89 @@ public class GuardServiceTest {
         android.app.job.JobScheduler js = (android.app.job.JobScheduler)
                 app.getSystemService(android.content.Context.JOB_SCHEDULER_SERVICE);
         assertEquals(1, js.getAllPendingJobs().size());
+    }
+
+    @Test
+    public void appOnlyMaskHidesWhenLeavingAndCoversAgainWhenBack() {
+        GuardState st = GuardState.get();
+        st.fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(61_000);
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue("满一分钟该拦", overlay.isCovering());
+        assertEquals(1, Prefs.todayLocks(app));
+
+        st.fgPackage = "com.tencent.mm";
+        idle(1_000);
+
+        assertTrue("锁本身还在", overlay.isShowing());
+        assertFalse("切走遮罩该收起来", overlay.isCovering());
+        assertEquals("切走不该算新的一次拦截", 1, Prefs.todayLocks(app));
+
+        st.fgPackage = Prefs.DOUYIN;
+        idle(1_000);
+
+        assertTrue("回到目标 App 该再盖住", overlay.isCovering());
+        assertEquals("回来也不该重复记拦截", 1, Prefs.todayLocks(app));
+    }
+
+    @Test
+    public void appOnlyMaskHidesForHomeButNotForSystemUi() {
+        GuardState st = GuardState.get();
+        st.fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(61_000);
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue(overlay.isCovering());
+
+        Shield.onWindow(st, "com.example.launcher");
+        idle(1_000);
+        assertFalse("按 Home 该收起遮罩", overlay.isCovering());
+
+        Shield.onWindow(st, Prefs.DOUYIN);
+        idle(1_000);
+        assertTrue("回到目标 App 该再盖住", overlay.isCovering());
+
+        Shield.onWindow(st, "com.android.systemui");
+        idle(1_000);
+        assertTrue("下拉通知栏 / 最近任务不算切走", overlay.isCovering());
+    }
+
+    @Test
+    public void globalMaskStaysWhenLeavingTheApp() {
+        Prefs.setScope(app, Scope.GLOBAL);
+        GuardState st = GuardState.get();
+        st.fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(61_000);
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue(overlay.isCovering());
+
+        st.fgPackage = "com.tencent.mm";
+        idle(1_000);
+
+        assertTrue("全局遮罩不该跟着切走", overlay.isShowing());
+        assertTrue(overlay.isCovering());
+    }
+
+    @Test
+    public void previewStaysUpEvenOutsideTheTargetApps() {
+        GuardState st = GuardState.get();
+        st.fgPackage = "com.tencent.mm";
+
+        Intent i = new Intent(app, GuardService.class).setAction(GuardService.ACTION_TEST);
+        ServiceController<GuardService> c = Robolectric.buildService(GuardService.class, i);
+        GuardService svc = c.create().get();
+        c.startCommand(0, 0);
+
+        assertTrue("试一下要能看见", overlayOf(svc).isCovering());
+
+        idle(2_000);
+
+        assertTrue("试一下不该被只遮罩 App 的规则收走", overlayOf(svc).isCovering());
     }
 
     // ---------- 问题3：锁一会儿自己解开 ----------

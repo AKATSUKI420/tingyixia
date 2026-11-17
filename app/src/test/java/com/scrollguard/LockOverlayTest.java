@@ -176,6 +176,24 @@ public class LockOverlayTest {
     }
 
     @Test
+    public void hidingKeepsTheLockAndCanCoverAgain() {
+        show(10);
+        assertTrue(overlay.isCovering());
+
+        overlay.setCovering(false);
+
+        assertTrue("锁还在，只是不挡着别的 App", overlay.isShowing());
+        assertFalse("这会儿不该再挡屏幕", overlay.isCovering());
+
+        overlay.setCovering(true);
+        assertTrue("回来要能再盖上", overlay.isCovering());
+
+        TestPad.type(pad, "123456");
+        Wait.until("重新盖上后输对密码也该放人", () -> !overlay.isShowing());
+        assertTrue(unlocked);
+    }
+
+    @Test
     public void dismissRemovesIt() {
         show(10);
         overlay.dismiss();

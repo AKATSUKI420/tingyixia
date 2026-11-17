@@ -36,6 +36,8 @@ public class GuardService extends Service {
     private long lastPlayCheck;
     private boolean playValue = true;
     private String notiScope;
+    /** 「试一下拦截」不是真拦，别被只遮罩 App 的规则收起来 */
+    private boolean preview;
 
     private final Runnable loop = new Runnable() {
         @Override
@@ -82,14 +84,19 @@ public class GuardService extends Service {
         if (overlay.isShowing()) {
             return;
         }
+        preview = true;
         overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this),
                 Scope.isGlobal(this), () -> {
+            preview = false;
             GuardState s = GuardState.get();
             ticker.resetCounting();
             s.countedMs = 0L;
             s.locked = false;
             lastTick = SystemClock.elapsedRealtime();
         });
+        if (!overlay.isShowing()) {
+            preview = false;
+        }
     }
 
     private void step() {
@@ -102,10 +109,6 @@ public class GuardService extends Service {
             return;
         }
 
-        if (overlay.isShowing()) {
-            return;
-        }
-
         String scope = Prefs.scope(this);
         if (!scope.equals(notiScope)) {
             // 范围改了，常驻通知里的说法也跟着换
@@ -113,6 +116,14 @@ public class GuardService extends Service {
         }
 
         GuardState st = GuardState.get();
+        if (overlay.isShowing()) {
+            // 只遮罩 App：人已经切走就把这一层收起来，回来再盖回去。
+            // 锁本身没解，计时也不清零，所以回来还是锁着。
+            boolean covering = preview || Scope.GLOBAL.equals(scope) || isTargetForeground(st);
+            overlay.setCovering(covering);
+            return;
+        }
+
         st.portrait = getResources().getConfiguration().orientation
                 != Configuration.ORIENTATION_LANDSCAPE;
 
@@ -132,11 +143,18 @@ public class GuardService extends Service {
         }
     }
 
+    /** 前台是不是还停在目标 App 上；桌面和别的应用都算切走，系统弹窗不算 */
+    private boolean isTargetForeground(GuardState st) {
+        String pkg = st.fgPackage;
+        return pkg != null && Prefs.targets(this).contains(pkg);
+    }
+
     private void lock() {
         GuardState st = GuardState.get();
         if (overlay.isShowing()) {
             return;
         }
+        preview = false;
         flush();
         if (!Settings.canDrawOverlays(this)) {
             // 没有悬浮窗权限就拦不住，别一直重试
@@ -209,9 +227,10 @@ public class GuardService extends Service {
 
         String line;
         if (Scope.isGlobal(this)) {
-            line = "整台手机连着用 " + Prefs.limitMin(this) + " 分钟会拦一下";
+            line = "全局遮罩 · 整台手机连着用 " + Prefs.limitMin(this) + " 分钟会拦一下";
         } else {
-            line = "抖音 / 哔哩哔哩 竖屏连着刷 " + Prefs.limitMin(this) + " 分钟会拦一下";
+            line = "只遮罩抖音 / 哔哩哔哩 · 竖屏连着刷 "
+                    + Prefs.limitMin(this) + " 分钟会拦一下";
         }
         if (Prefs.autoUnlockMin(this) > 0) {
             line = line + "，锁 " + Prefs.autoUnlockMin(this) + " 分钟后自动解开";
@@ -236,6 +255,7 @@ public class GuardService extends Service {
 
     @Override
     public void onDestroy() {
+        preview = false;
         flush();
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);

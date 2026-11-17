@@ -213,15 +213,17 @@ public class MainActivityTest {
         assertTrue("填错了不该关掉框", d.isShowing());
     }
 
-    // ---------- 问题2：只锁 App / 锁全局 ----------
+    // ---------- 问题2：只遮罩 App / 全局遮罩 ----------
 
     @Test
     public void scopeDefaultsToAppOnlyWithTargetSwitches() {
         Pin.save(app, "123456");
         MainActivity a = open();
 
-        assertTrue("规则里该有拦截范围", hasText(a.findViewById(android.R.id.content), "拦截范围"));
+        assertTrue("规则里该有遮罩范围", hasText(a.findViewById(android.R.id.content), "遮罩范围"));
         assertTrue(hasText(a.findViewById(android.R.id.content), Scope.LABEL_APP));
+        assertTrue("只遮罩 App 要说清楚切走会收起",
+                hasText(a.findViewById(android.R.id.content), "只算抖音 / B 站；切走就收起"));
         assertTrue(hasText(a.findViewById(android.R.id.content), "抖音"));
         assertTrue(hasText(a.findViewById(android.R.id.content), "哔哩哔哩"));
     }
@@ -231,8 +233,8 @@ public class MainActivityTest {
         Pin.save(app, "123456");
         MainActivity a = open();
 
-        View row = findClickableRow(a.findViewById(android.R.id.content), "拦截范围");
-        assertNotNull("规则里找不到拦截范围那一行", row);
+        View row = findClickableRow(a.findViewById(android.R.id.content), "遮罩范围");
+        assertNotNull("规则里找不到遮罩范围那一行", row);
         row.performClick();
         ShadowLooper.shadowMainLooper().idle();
 
@@ -241,9 +243,11 @@ public class MainActivityTest {
         d.getListView().performItemClick(null, 1, 1);
         ShadowLooper.shadowMainLooper().idle();
 
-        assertEquals("选了整台手机", Scope.GLOBAL, Prefs.scope(app));
+        assertEquals("选了全局遮罩", Scope.GLOBAL, Prefs.scope(app));
         assertFalse("选完该关框", d.isShowing());
         assertTrue(hasText(a.findViewById(android.R.id.content), Scope.LABEL_GLOBAL));
+        assertTrue("全局模式该说清楚按 Home 也盖着",
+                hasText(a.findViewById(android.R.id.content), "整台手机都算；按 Home 也盖着"));
         assertTrue("全局模式该有一句说明",
                 hasText(a.findViewById(android.R.id.content), "不管哪个应用"));
         assertFalse("全局模式不该再显示单个 App 开关",

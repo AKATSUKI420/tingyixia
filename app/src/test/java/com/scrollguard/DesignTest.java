@@ -57,7 +57,7 @@ public class DesignTest {
 
     @Test
     public void rowsAreFiftyFourDpWithSeventeenSpTitle() {
-        LinearLayout row = Ui.row(app, "拦截范围", "只算抖音 / B 站里的竖屏滑动", null);
+        LinearLayout row = Ui.row(app, "遮罩范围", "只算抖音 / B 站；切走就收起", null);
         assertEquals(Ui.dp(app, 54), row.getMinimumHeight());
 
         LinearLayout col = (LinearLayout) row.getChildAt(0);

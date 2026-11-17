@@ -33,7 +33,7 @@ public class PrefsTest {
         assertEquals(10L, Prefs.limitMin(c()));
         assertFalse(Prefs.enabled(c()));
         assertFalse(Prefs.strict(c()));
-        assertEquals("默认只锁抖音 / B 站", Scope.APP, Prefs.scope(c()));
+        assertEquals("默认只遮罩 App", Scope.APP, Prefs.scope(c()));
         assertFalse("还没设密码", Prefs.hasPin(c()));
         assertEquals(0L, Prefs.todayMs(c()));
         assertEquals(0, Prefs.todayLocks(c()));
@@ -97,7 +97,7 @@ public class PrefsTest {
         assertTrue("两个都关掉是允许的", Prefs.targets(c()).isEmpty());
     }
 
-    /** 拦截范围写进去再读还在；乱填的值退回只锁 App */
+    /** 遮罩范围写进去再读还在；乱填的值退回只遮罩 App */
     @Test
     public void scopeSurvivesAndUnknownValuesFallBack() {
         assertEquals(Scope.APP, Prefs.scope(c()));
@@ -106,7 +106,7 @@ public class PrefsTest {
         assertEquals(Scope.GLOBAL, Prefs.scope(c()));
 
         Prefs.setScope(c(), "nonsense");
-        assertEquals("不认识的值当只锁 App", Scope.APP, Prefs.scope(c()));
+        assertEquals("不认识的值当只遮罩 App", Scope.APP, Prefs.scope(c()));
 
         Prefs.setScope(c(), null);
         assertEquals(Scope.APP, Prefs.scope(c()));
@@ -154,7 +154,7 @@ public class PrefsTest {
         assertEquals(0L, Prefs.todayMs(c()));
         assertEquals(0, Prefs.todayLocks(c()));
         assertEquals("清完回到默认两个都看着", 2, Prefs.targets(c()).size());
-        assertEquals("拦截范围也回到只锁 App", Scope.APP, Prefs.scope(c()));
+        assertEquals("遮罩范围也回到只遮罩 App", Scope.APP, Prefs.scope(c()));
         assertTrue("密码也没了", Prefs.pinHash(c()).isEmpty());
     }
 
