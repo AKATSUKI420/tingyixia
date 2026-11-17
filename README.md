@@ -2,8 +2,8 @@
 
 只给自己用的 Android 防沉迷小工具：在抖音 / 哔哩哔哩里**竖着手机连续刷短视频**，攒满设定时长（默认 10 分钟）就整块盖住，必须输 6 位密码才能回去。
 
-- 版本 **1.1.0**（versionCode 2）｜包名 `com.scrollguard`｜Android 8.0（API 26）及以上
-- 安装包：仓库根目录 `停一下.apk`（43,471 字节，SHA-256 `9E3479A535F6947DAAA60058338AFB899E5AA6C4D3A312F915BF8E48D76CBAA0`），打包产物另在 `dist/`
+- 版本 **1.2.0**（versionCode 3）｜包名 `com.scrollguard`｜Android 8.0（API 26）及以上
+- 安装包：仓库根目录 `停一下.apk`（43,471 字节，SHA-256 `5737AC8718E52DA0F1848247B57BBBF4D8C597ED3536D5FCDD23BC058516092C`），打包产物另在 `dist/`
 - 不上架、不登录、不联网（APK 里连 `INTERNET` 权限都没申请），所有数据只在这台手机上
 
 ---
@@ -46,7 +46,7 @@
 
 1. 把 `停一下.apk` 传到手机（微信文件传输助手、数据线、网盘都行）。
 2. 点开安装；系统问"允许安装未知应用"时允许一次。
-   - 已经装过 v1.0 的，直接覆盖安装即可：同一个签名，密码和统计都保留。
+   - **从 v1.1.0 或更早版本升级：先卸载旧版再装。** 1.2.0 换成了正式签名，和旧包的调试签名不一致，系统会拒绝覆盖安装；卸载会清掉密码和当天统计。
 3. 打开 App，**先设一个 6 位数字密码**（输两遍；两遍不一样会提示「两次不一样，重来」并退回第一步）。
 4. 回到首页，把「能不能拦得住」里的三项都点成绿色：
    - **无障碍** —— 判断当前是不是在抖音/B 站、手机是不是竖着。不开就什么都认不出来。
@@ -219,6 +219,12 @@ $env:ANDROID_SDK_ROOT = 'D:\android-tools\sdk'
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
+### 签名
+
+1.2.0 起用仓库外的正式 keystore 签名：`keys/tingyixia-release.jks`（别名 `tingyixia`），密码放在根目录 `keystore.properties`。两者都在 `.gitignore` 里，**不要提交，也不要丢**——丢了就再也签不出能覆盖安装的升级包，只能换包名或让用户卸载重装。
+
+换机器时把这两个文件一起拷过去；`app/build.gradle` 发现 `keystore.properties` 缺失会让 release 构建直接失败，不会偷偷退回 debug 签名。
+
 两个坑，改代码时别踩：
 
 - **工程路径不能带中文**，AGP 会直接拒绝构建。所以建了 `D:\scrollguard` 这个 junction 指向 `D:\防沉迷APP`，构建时用前者。
@@ -228,7 +234,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 ## 10. 怎么验它还能用
 
-**能在电脑上判的，全写成了自动测试（123 个，Robolectric）**：
+**能在电脑上判的，全写成了自动测试（124 个，Robolectric）**：
 
 ```powershell
 $env:JAVA_HOME = 'D:\android-tools\jdk17'
@@ -238,7 +244,7 @@ $env:ANDROID_SDK_ROOT = 'D:\android-tools\sdk'
 
 报告在 `app/build/reports/tests/testDebugUnitTest/index.html`。
 
-**APK 结构（29 项：无网络权限、无 allowBackup、签名、清单、无障碍配置……）**：
+**APK 结构（32 项：无网络权限、无 allowBackup、签名、清单、无障碍配置……）**：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\static-check.ps1

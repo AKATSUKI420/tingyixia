@@ -52,12 +52,16 @@ foreach ($p in @('SYSTEM_ALERT_WINDOW','FOREGROUND_SERVICE','FOREGROUND_SERVICE_
 $badge = & (Join-Path $bt 'aapt2.exe') dump badging $Apk 2>&1 | Out-String
 Check "package is com.scrollguard" ($badge -match "package: name='com\.scrollguard'") 'wrong package'
 $wantVer = '0.0.0'
+$wantCode = '0'
 $gradleApp = Join-Path $Root 'app\build.gradle'
 if (Test-Path $gradleApp) {
     $vm = Select-String -Path $gradleApp -Pattern 'versionName\s+"([^"]+)"' | Select-Object -First 1
     if ($vm) { $wantVer = $vm.Matches[0].Groups[1].Value }
+    $cm = Select-String -Path $gradleApp -Pattern 'versionCode\s+(\d+)' | Select-Object -First 1
+    if ($cm) { $wantCode = $cm.Matches[0].Groups[1].Value }
 }
 Check ("versionName " + $wantVer)   ($badge -match ("versionName='" + [regex]::Escape($wantVer) + "'")) 'wrong version'
+Check ("versionCode " + $wantCode)  ($badge -match ("versionCode='" + [regex]::Escape($wantCode) + "'")) 'wrong versionCode'
 Check "minSdk 26"                  ($badge -match "sdkVersion:'26'")                  'wrong minSdk'
 Check "targetSdk 34"               ($badge -match "targetSdkVersion:'34'")            'wrong targetSdk'
 Check "has launcher activity"      ($badge -match "launchable-activity: name='com\.scrollguard\.MainActivity'") 'no launcher'
@@ -67,6 +71,8 @@ $sig = & (Join-Path $bt 'apksigner.bat') verify -v --print-certs $Apk 2>&1 | Out
 $sigExit = $LASTEXITCODE
 Check "apk signature verifies" ($sigExit -eq 0 -and $sig -match 'Verifies') ("apksigner exit " + $sigExit)
 Check "signed with v2 scheme"  ($sig -match 'v2 scheme.*: true') 'v2 missing'
+Check "not signed with the debug key" (-not ($sig -match 'CN=Android Debug')) 'debug keystore still in use'
+Check "signed by TingYixia"    ($sig -match 'certificate DN: CN=TingYixia') 'unexpected signer'
 
 # ---- 4. components --------------------------------------------------------
 $tree = & (Join-Path $bt 'aapt2.exe') dump xmltree --file AndroidManifest.xml $Apk 2>&1 | Out-String

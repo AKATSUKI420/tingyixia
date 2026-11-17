@@ -10,6 +10,8 @@ dist/
 shot-*.png
 
 # signing material and heap dumps must never be committed
+keystore.properties
+keys/
 *.jks
 *.keystore
 *.p12
