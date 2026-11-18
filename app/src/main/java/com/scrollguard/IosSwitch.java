@@ -25,8 +25,8 @@ public class IosSwitch extends View {
     private static final int TRACK_W_DP = 51;
     private static final int TRACK_H_DP = 31;
     private static final float THUMB_DP = 27f;
-    private static final int TRACK_OFF = 0xFF39393D;
-    private static final int TRACK_ON = 0xFF30D158;
+    private static final int TRACK_OFF = 0xFFE9E9EA;
+    private static final int TRACK_ON = 0xFF34C759;
 
     private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint thumbPaint = new Paint(Paint.ANTI_ALIAS_FLAG);

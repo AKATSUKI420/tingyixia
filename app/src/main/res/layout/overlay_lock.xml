@@ -31,7 +31,7 @@
                 android:alpha="0.92"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_lock"
-                android:tint="@color/text" />
+                android:tint="@color/accent" />
 
             <TextView
                 android:id="@+id/lock_kicker"

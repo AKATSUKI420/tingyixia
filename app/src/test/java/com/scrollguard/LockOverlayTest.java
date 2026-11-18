@@ -1,6 +1,7 @@
 package com.scrollguard;
 
 import android.app.Application;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.view.KeyEvent;
 import android.view.View;
@@ -127,6 +128,7 @@ public class LockOverlayTest {
 
         TextView title = v.findViewById(R.id.lock_title);
         assertEquals(Ui.sp(app, 32), title.getTextSize(), 1f);
+        assertEquals("浅色锁屏标题该是黑的", Color.BLACK, title.getCurrentTextColor());
 
         TextView kicker = v.findViewById(R.id.lock_kicker);
         assertEquals(Ui.sp(app, 13), kicker.getTextSize(), 1f);

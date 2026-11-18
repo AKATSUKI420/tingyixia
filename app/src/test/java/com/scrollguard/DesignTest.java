@@ -1,6 +1,7 @@
 package com.scrollguard;
 
 import android.app.Application;
+import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.view.View;
@@ -21,7 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * 问题3：把 iOS 深色模式的几个硬指标钉住，免得以后改样式又滑回 Material 默认。
+ * 问题3：把 iOS 浅色模式的几个硬指标钉住，免得以后改样式又滑回 Material 默认。
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 34)
@@ -37,15 +38,19 @@ public class DesignTest {
     }
 
     @Test
-    public void paletteMatchesIOSDark() {
-        assertEquals(0xFF000000, app.getColor(R.color.bg));
-        assertEquals(0xFF1C1C1E, app.getColor(R.color.card));
-        assertEquals(0xFFFFFFFF, app.getColor(R.color.text));
+    public void paletteMatchesIOSLight() {
+        assertEquals(0xFFF2F2F7, app.getColor(R.color.bg));
+        assertEquals(0xFFFFFFFF, app.getColor(R.color.card));
+        assertEquals(0xFFE5E5EA, app.getColor(R.color.card_pressed));
+        assertEquals(0xFF000000, app.getColor(R.color.text));
         assertEquals(0xFF8E8E93, app.getColor(R.color.dim));
-        assertEquals(0xFF38383A, app.getColor(R.color.separator));
-        assertEquals(0xFF0A84FF, app.getColor(R.color.accent));
-        assertEquals(0xFF30D158, app.getColor(R.color.good));
-        assertEquals(0xFFFF453A, app.getColor(R.color.bad));
+        assertEquals(0xFFC7C7CC, app.getColor(R.color.dim2));
+        assertEquals(0xFFC6C6C8, app.getColor(R.color.separator));
+        assertEquals(0xFF007AFF, app.getColor(R.color.accent));
+        assertEquals(0xFF34C759, app.getColor(R.color.good));
+        assertEquals(0xFFFF3B30, app.getColor(R.color.bad));
+        assertEquals(0xFFFF9500, app.getColor(R.color.warn));
+        assertEquals(0xFFF2F2F7, app.getColor(R.color.ic_launcher_bg));
     }
 
     @Test
@@ -72,6 +77,7 @@ public class DesignTest {
         TextView b = Ui.button(app, "开起来", false);
         assertEquals(Ui.dp(app, 52), b.getMinHeight());
         assertEquals(Ui.sp(app, 17), b.getTextSize(), 1f);
+        assertEquals("实心按钮上的字要是白的", Color.WHITE, b.getCurrentTextColor());
         assertTrue("按钮该有按压波纹", b.getBackground() instanceof RippleDrawable);
     }
 
@@ -105,10 +111,12 @@ public class DesignTest {
         TextView title = a.findViewById(R.id.page_title);
         assertNotNull("大标题没挂上", title);
         assertEquals(Ui.sp(app, 34), title.getTextSize(), 1f);
+        assertEquals("浅色页的大标题该是黑的", Color.BLACK, title.getCurrentTextColor());
 
         TextView status = a.findViewById(R.id.status_line);
         assertNotNull("状态行没挂上", status);
         assertEquals(Ui.sp(app, 15), status.getTextSize(), 1f);
+        assertEquals("状态行该是次级灰", app.getColor(R.color.dim), status.getCurrentTextColor());
         assertNotNull("状态行前面该有个小圆点", status.getCompoundDrawablesRelative()[0]);
 
         TextView btn = a.findViewById(R.id.primary_button);

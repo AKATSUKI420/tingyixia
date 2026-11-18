@@ -3,6 +3,7 @@ package com.scrollguard;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
@@ -14,7 +15,7 @@ import android.widget.TextView;
 
 /**
  * 界面小零件的拼装工具。没有用任何第三方库，全部是系统控件。
- * 尺寸和颜色按 iOS 深色模式的分组列表来做：纯黑底、22dp 卡片、54dp 行高、胶囊按钮。
+ * 尺寸和颜色按 iOS 浅色模式的分组列表来做：分组灰底、白卡片、22dp 圆角、54dp 行高、胶囊按钮。
  */
 public final class Ui {
 
@@ -162,10 +163,10 @@ public final class Ui {
         GradientDrawable g = new GradientDrawable();
         g.setCornerRadius(dp(c, 100));
         if (ok) {
-            g.setColor(0x1F30D158);
+            g.setColor(0x1F34C759);
             t.setTextColor(col(c, R.color.good));
         } else {
-            g.setColor(0x1FFF453A);
+            g.setColor(0x1FFF3B30);
             t.setTextColor(col(c, R.color.bad));
         }
         t.setBackground(g);
@@ -179,7 +180,7 @@ public final class Ui {
         t.setGravity(Gravity.CENTER);
         t.setTextSize(17);
         t.setTypeface(medium(c));
-        t.setTextColor(col(c, R.color.text));
+        t.setTextColor(Color.WHITE);
         t.setIncludeFontPadding(false);
         t.setMinHeight(dp(c, BUTTON_HEIGHT_DP));
         t.setPadding(dp(c, 20), 0, dp(c, 20), 0);
