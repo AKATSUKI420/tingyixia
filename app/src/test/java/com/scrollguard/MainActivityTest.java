@@ -298,6 +298,36 @@ public class MainActivityTest {
         assertTrue(hasText(a.findViewById(android.R.id.content), Motion.LABEL_SPRING));
     }
 
+    @Test
+    public void speedDefaultsToNormal() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        assertTrue("规则里该有动画速度", hasText(a.findViewById(android.R.id.content), "动画速度"));
+        assertTrue(hasText(a.findViewById(android.R.id.content), MotionSpeed.label(MotionSpeed.DEFAULT)));
+        assertEquals(1f, Prefs.motionSpeed(app), 0.001f);
+    }
+
+    @Test
+    public void speedCanSwitchToFast() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        View row = findClickableRow(a.findViewById(android.R.id.content), "动画速度");
+        assertNotNull("规则里找不到动画速度那一行", row);
+        row.performClick();
+        ShadowLooper.shadowMainLooper().idle();
+
+        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull("点开没弹框", d);
+        d.getListView().performItemClick(null, 2, 2);
+        ShadowLooper.shadowMainLooper().idle();
+
+        assertEquals("选了快 1.5×", 1.5f, Prefs.motionSpeed(app), 0.001f);
+        assertFalse("选完该关框", d.isShowing());
+        assertTrue(hasText(a.findViewById(android.R.id.content), MotionSpeed.label(1.5f)));
+    }
+
     private static View findClickableRow(View v, String title) {        if (v instanceof ViewGroup && !(v instanceof TextView)) {
             ViewGroup g = (ViewGroup) v;
             if (g.isClickable() && hasText(g, title)) {

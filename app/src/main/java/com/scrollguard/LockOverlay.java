@@ -37,6 +37,7 @@ public final class LockOverlay {
     private Runnable contentFrame;
     private boolean contentAnimating;
     private String motion = Motion.DEFAULT;
+    private float speed = MotionSpeed.DEFAULT;
     private PinPadView pad;
     private TextView footer;
     private long shownAt;
@@ -173,6 +174,7 @@ public final class LockOverlay {
         }
 
         motion = Prefs.motion(ctx);
+        speed = Prefs.motionSpeed(ctx);
         Context themed = new ContextThemeWrapper(ctx, R.style.LockTheme);
         View v = LayoutInflater.from(themed).inflate(R.layout.overlay_lock, null);
 
@@ -485,13 +487,15 @@ public final class LockOverlay {
         if (Motion.STAGGER.equals(motion)) {
             content.setAlpha(1f);
             long elapsed = (long) (t * Math.max(enterContentMs(), 1));
+            long step = Math.max(1L, Math.round(25 / speed));
+            long block = Math.max(1L, Math.round(180 / speed));
             View[] blocks = staggerBlocks();
             for (int i = 0; i < blocks.length; i++) {
                 View v = blocks[i];
                 if (v == null) {
                     continue;
                 }
-                float bt = Math.max(0f, Math.min(1f, (elapsed - i * 25f) / 180f));
+                float bt = Math.max(0f, Math.min(1f, (elapsed - i * step) / (float) block));
                 float be = new DecelerateInterpolator().getInterpolation(bt);
                 v.setAlpha(be);
                 v.setTranslationY(Ui.dp(ctx, 4) * (1f - be));
@@ -585,36 +589,36 @@ public final class LockOverlay {
     }
 
     private long enterBackgroundMs() {
-        return Motion.SHEET.equals(motion) || Motion.SPRING.equals(motion) ? 100 : 120;
+        return scaled(Motion.SHEET.equals(motion) || Motion.SPRING.equals(motion) ? 100 : 120);
     }
 
     private long exitBackgroundMs() {
-        switch (Motion.normalize(motion)) {
-            case Motion.SHEET:
-                return 180;
-            case Motion.STAGGER:
-                return 120;
-            case Motion.SPRING:
-                return 120;
-            default:
-                return 140;
-        }
+        return scaled(exitMs());
     }
 
     private long enterContentMs() {
-        return Motion.SHEET.equals(motion) || Motion.SPRING.equals(motion) ? 260 : 220;
+        return scaled(Motion.STAGGER.equals(motion) ? 320
+                : Motion.SHEET.equals(motion) || Motion.SPRING.equals(motion) ? 260 : 220);
     }
 
     private long exitContentMs() {
+        return scaled(exitMs());
+    }
+
+    private long exitMs() {
         switch (Motion.normalize(motion)) {
             case Motion.SHEET:
                 return 180;
             case Motion.STAGGER:
-                return 120;
             case Motion.SPRING:
                 return 120;
             default:
                 return 140;
         }
+    }
+
+    /** 倍率越大，动画越快，时长越短。 */
+    private long scaled(long base) {
+        return Math.max(1L, Math.round(base / speed));
     }
 }

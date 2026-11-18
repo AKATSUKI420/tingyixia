@@ -127,6 +127,20 @@ public class LockOverlayTest {
     }
 
     @Test
+    public void speedChangesHowLongTheContentTakes() {
+        Prefs.setMotionSpeed(app, 0.6f);
+        show(10);
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(300));
+        assertTrue("慢速 0.6× 这时还没播完", overlay.hasContentAnimation());
+
+        overlay.dismiss();
+        Prefs.setMotionSpeed(app, 2f);
+        show(10);
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(300));
+        assertFalse("快速 2× 早该播完", overlay.hasContentAnimation());
+    }
+
+    @Test
     public void showsLayerWithTheReason() {
         show(10);
 

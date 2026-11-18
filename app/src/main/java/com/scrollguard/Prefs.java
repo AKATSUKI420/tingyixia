@@ -105,6 +105,16 @@ public final class Prefs {
         sp(c).edit().putString("motion", Motion.normalize(v)).apply();
     }
 
+    /** 遮罩动画快慢倍率；默认标准 1×。 */
+    public static float motionSpeed(Context c) {
+        return MotionSpeed.normalize(
+                sp(c).getFloat("motion_speed", MotionSpeed.DEFAULT));
+    }
+
+    public static void setMotionSpeed(Context c, float v) {
+        sp(c).edit().putFloat("motion_speed", MotionSpeed.normalize(v)).apply();
+    }
+
     public static Set<String> targets(Context c) {
         Set<String> def = new HashSet<>();
         def.add(DOUYIN);

@@ -35,6 +35,7 @@ public class PrefsTest {
         assertFalse(Prefs.strict(c()));
         assertEquals("默认只遮罩 App", Scope.APP, Prefs.scope(c()));
         assertEquals("默认轻推淡入", Motion.FADE, Prefs.motion(c()));
+        assertEquals("默认 1× 速度", 1f, Prefs.motionSpeed(c()), 0.001f);
         assertFalse("还没设密码", Prefs.hasPin(c()));
         assertEquals(0L, Prefs.todayMs(c()));
         assertEquals(0, Prefs.todayLocks(c()));
@@ -125,6 +126,21 @@ public class PrefsTest {
         assertEquals("不认识的值当轻推淡入", Motion.FADE, Prefs.motion(c()));
     }
 
+    /** 动画速度写进去再读还在；乱填的值吸到最近一档 */
+    @Test
+    public void motionSpeedSurvivesAndSnapsToAChoice() {
+        assertEquals(1f, Prefs.motionSpeed(c()), 0.001f);
+
+        Prefs.setMotionSpeed(c(), 2f);
+        assertEquals(2f, Prefs.motionSpeed(c()), 0.001f);
+
+        Prefs.setMotionSpeed(c(), 1.2f);
+        assertEquals("最近的是 1×", 1f, Prefs.motionSpeed(c()), 0.001f);
+
+        Prefs.setMotionSpeed(c(), 9f);
+        assertEquals("超过最大档就取 2×", 2f, Prefs.motionSpeed(c()), 0.001f);
+    }
+
     /** E4：跨天靠日键分开——换了日子就是另一个键，自然从 0 开始 */
     @Test
     public void dayKeySplitsDays() {
@@ -155,6 +171,7 @@ public class PrefsTest {
         Prefs.setEnabled(c(), true);
         Prefs.setScope(c(), Scope.GLOBAL);
         Prefs.setMotion(c(), Motion.SPRING);
+        Prefs.setMotionSpeed(c(), 2f);
         Prefs.setTarget(c(), Prefs.BILI, false);
         Prefs.addTodayMs(c(), 120000L);
         Prefs.bumpTodayLocks(c());
@@ -170,6 +187,7 @@ public class PrefsTest {
         assertEquals("清完回到默认两个都看着", 2, Prefs.targets(c()).size());
         assertEquals("遮罩范围也回到只遮罩 App", Scope.APP, Prefs.scope(c()));
         assertEquals("动效回到默认轻推淡入", Motion.FADE, Prefs.motion(c()));
+        assertEquals("速度回到 1×", 1f, Prefs.motionSpeed(c()), 0.001f);
         assertTrue("密码也没了", Prefs.pinHash(c()).isEmpty());
     }
 

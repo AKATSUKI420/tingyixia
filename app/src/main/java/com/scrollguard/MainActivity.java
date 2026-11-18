@@ -150,6 +150,13 @@ public class MainActivity extends Activity {
         rules.addView(r3);
         rules.addView(Ui.divider(this));
 
+        TextView speedVal = Ui.value(this, MotionSpeed.label(Prefs.motionSpeed(this)));
+        speedVal.setTextColor(Ui.col(this, R.color.text));
+        LinearLayout r3b = Ui.row(this, "动画速度", "遮罩出现和消失的快慢", speedVal);
+        Ui.tap(r3b, this::pickSpeed);
+        rules.addView(r3b);
+        rules.addView(Ui.divider(this));
+
         if (Scope.isGlobal(this)) {
             rules.addView(Ui.row(this, "不管哪个应用", "横竖屏都算，攒的是同一个时长", null));
         } else {
@@ -371,6 +378,20 @@ public class MainActivity extends Activity {
                 .setTitle("遮罩动画")
                 .setSingleChoiceItems(labels, checked, (d, which) -> {
                     Prefs.setMotion(this, Motion.values()[which]);
+                    d.dismiss();
+                    build();
+                })
+                .setNegativeButton("算了", null)
+                .show();
+    }
+
+    private void pickSpeed() {
+        final String[] labels = MotionSpeed.labels();
+        final int checked = MotionSpeed.indexOf(Prefs.motionSpeed(this));
+        new AlertDialog.Builder(this)
+                .setTitle("动画速度")
+                .setSingleChoiceItems(labels, checked, (d, which) -> {
+                    Prefs.setMotionSpeed(this, MotionSpeed.values()[which]);
                     d.dismiss();
                     build();
                 })
