@@ -133,6 +133,26 @@ public class LockOverlayTest {
     }
 
     @Test
+    public void centerMotionGrowsFromTheMiddleAndShrinksBack() {
+        Prefs.setMotion(app, Motion.CENTER);
+        show(10);
+
+        View content = view(overlay).findViewById(R.id.lock_content);
+        assertNotNull("遮罩内容层不见了", content);
+        assertEquals("应该从缩小状态开始", 0.55f, content.getScaleX(), 0.02f);
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(500));
+        assertEquals("进场后应该恢复到原大小", 1f, content.getScaleX(), 0.01f);
+
+        overlay.setCovering(false);
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(90));
+        assertTrue("退出应该往中心缩：" + content.getScaleX(), content.getScaleX() < 1f);
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(500));
+        assertFalse("缩完该从 WindowManager 摘掉", overlay.isAttached());
+    }
+
+    @Test
     public void showsLayerWithTheReason() {
         show(10);
 

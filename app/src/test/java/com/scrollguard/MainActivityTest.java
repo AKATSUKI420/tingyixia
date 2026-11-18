@@ -267,6 +267,26 @@ public class MainActivityTest {
     }
 
     @Test
+    public void motionCanSwitchToCenter() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        View row = findClickableRow(a.findViewById(android.R.id.content), "遮罩动画");
+        assertNotNull("规则里找不到遮罩动画那一行", row);
+        row.performClick();
+        ShadowLooper.shadowMainLooper().idle();
+
+        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull("点开没弹框", d);
+        d.getListView().performItemClick(null, 4, 4);
+        ShadowLooper.shadowMainLooper().idle();
+
+        assertEquals("选了中心放大", Motion.CENTER, Prefs.motion(app));
+        assertFalse("选完该关框", d.isShowing());
+        assertTrue(hasText(a.findViewById(android.R.id.content), Motion.LABEL_CENTER));
+    }
+
+    @Test
     public void speedDefaultsToNormal() {
         Pin.save(app, "123456");
         MainActivity a = open();

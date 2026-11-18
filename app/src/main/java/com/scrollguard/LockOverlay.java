@@ -400,8 +400,8 @@ public final class LockOverlay {
         } else {
             content.setAlpha(0f);
             content.setTranslationY(0f);
-            content.setScaleX(1f);
-            content.setScaleY(1f);
+            content.setScaleX(startScale());
+            content.setScaleY(startScale());
         }
     }
 
@@ -501,6 +501,7 @@ public final class LockOverlay {
         float e = Motion.SPRING.equals(motion)
                 ? new OvershootInterpolator(0.8f).getInterpolation(t)
                 : new DecelerateInterpolator().getInterpolation(t);
+        centerPivotIfNeeded();
         content.setAlpha(Math.min(1f, t * 1.6f));
         content.setTranslationY(Ui.dp(ctx, startOffsetDp()) * (1f - e));
         float scale = startScale() + (1f - startScale()) * e;
@@ -513,11 +514,13 @@ public final class LockOverlay {
             return;
         }
         float e = new AccelerateInterpolator().getInterpolation(t);
+        centerPivotIfNeeded();
         setWindowAlpha(1f - t);
         content.setAlpha(1f - t);
         int toY = Motion.SHEET.equals(motion) ? 32 : endOffsetDp();
         content.setTranslationY(Ui.dp(ctx, toY) * e);
-        float toScale = Motion.SPRING.equals(motion) ? 0.96f : 0.97f;
+        float toScale = Motion.CENTER.equals(motion) ? 0.55f
+                : Motion.SPRING.equals(motion) ? 0.96f : 0.97f;
         float scale = 1f - (1f - toScale) * e;
         content.setScaleX(scale);
         content.setScaleY(scale);
@@ -551,6 +554,20 @@ public final class LockOverlay {
     boolean hasContentAnimation() {
         return contentAnimating;
     }
+
+    /** 中心放大/缩小要用内容自己的中心当轴；布局还没量好时先不动。 */
+    private void centerPivotIfNeeded() {
+        if (!Motion.CENTER.equals(motion) || content == null) {
+            return;
+        }
+        int w = content.getWidth();
+        int h = content.getHeight();
+        if (w > 0 && h > 0) {
+            content.setPivotX(w / 2f);
+            content.setPivotY(h / 2f);
+        }
+    }
+
     private View[] staggerBlocks() {
         View root = content != null ? content : view;
         if (root == null) {
@@ -567,6 +584,9 @@ public final class LockOverlay {
     }
 
     private float startScale() {
+        if (Motion.CENTER.equals(motion)) {
+            return 0.55f;
+        }
         if (Motion.SPRING.equals(motion)) {
             return 0.90f;
         }
@@ -594,6 +614,7 @@ public final class LockOverlay {
 
     private long enterContentMs() {
         return scaled(Motion.STAGGER.equals(motion) ? 320
+                : Motion.CENTER.equals(motion) ? 300
                 : Motion.SHEET.equals(motion) || Motion.SPRING.equals(motion) ? 260 : 220);
     }
 
@@ -604,6 +625,7 @@ public final class LockOverlay {
     private long exitMs() {
         switch (Motion.normalize(motion)) {
             case Motion.SHEET:
+            case Motion.CENTER:
                 return 180;
             case Motion.STAGGER:
             case Motion.SPRING:
