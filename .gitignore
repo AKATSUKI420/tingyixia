@@ -16,3 +16,11 @@ keys/
 *.keystore
 *.p12
 *.hprof
+
+# local adb/screenrecord diagnostics
+/cap*.png
+/flicker*
+/opaque*
+/realmask*
+/ui.xml
+

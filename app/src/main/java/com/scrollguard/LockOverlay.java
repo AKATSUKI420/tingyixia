@@ -131,10 +131,14 @@ public final class LockOverlay {
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                        | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-                PixelFormat.TRANSLUCENT);
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.OPAQUE);
         lp.gravity = Gravity.TOP | Gravity.START;
+        // The lock screen is fully opaque. Making that explicit avoids a
+        // translucent-to-opaque surface swap on the first frame, which shows
+        // up as a brief flash over the app underneath.
+        lp.alpha = 1f;
+        lp.windowAnimations = 0;
 
         try {
             wm.addView(v, lp);

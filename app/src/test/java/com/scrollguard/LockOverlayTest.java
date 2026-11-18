@@ -1,8 +1,10 @@
 package com.scrollguard;
 
 import android.app.Application;
+import android.graphics.PixelFormat;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import org.junit.Before;
@@ -70,6 +72,30 @@ public class LockOverlayTest {
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
+    }
+
+    private static WindowManager.LayoutParams windowParams(LockOverlay o) {
+        try {
+            Field f = LockOverlay.class.getDeclaredField("lp");
+            f.setAccessible(true);
+            return (WindowManager.LayoutParams) f.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    /**
+     * 全屏遮罩本身完全不透明。第一帧如果先按 TRANSLUCENT 合成，
+     * 视频上面会闪一下；这里把窗口格式和动画固定住。
+     */
+    @Test
+    public void windowIsOpaqueAndHasNoEnterAnimation() {
+        show(10);
+
+        WindowManager.LayoutParams lp = windowParams(overlay);
+        assertEquals(PixelFormat.OPAQUE, lp.format);
+        assertEquals(1f, lp.alpha, 0f);
+        assertEquals(0, lp.windowAnimations);
     }
 
     @Test
