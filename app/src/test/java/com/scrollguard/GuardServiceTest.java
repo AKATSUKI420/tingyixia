@@ -398,6 +398,35 @@ public class GuardServiceTest {
     }
 
     @Test
+    public void recentsTaskCardDoesNotBringTheMaskBack() {
+        GuardState st = GuardState.get();
+        st.fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(61_000);
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue(overlay.isCovering());
+
+        View root = viewOf(overlay);
+        root.onWindowFocusChanged(true);
+        root.onWindowFocusChanged(false);
+        idle(400);
+        assertFalse("按 Home 后先让开", overlay.isCovering());
+
+        // 最近任务里可能报出抖音的前台包名，但最上面其实是系统界面。
+        st.fgPackage = Prefs.DOUYIN;
+        st.topPackage = "com.android.systemui";
+        st.fgSeq++;
+        idle(1_000);
+        assertFalse("最近任务的任务卡不能把遮罩盖回来", overlay.isCovering());
+
+        Shield.onWindow(st, Prefs.DOUYIN);
+        idle(1_000);
+        assertTrue("真的回到抖音再盖", overlay.isCovering());
+        assertEquals("不该重复记拦截", 1, Prefs.todayLocks(app));
+    }
+
+    @Test
     public void previewStaysUpWhenWindowFocusIsLost() {
         GuardState st = GuardState.get();
         st.fgPackage = "com.tencent.mm";

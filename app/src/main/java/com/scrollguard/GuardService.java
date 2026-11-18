@@ -124,8 +124,8 @@ public class GuardService extends Service {
             // 只遮罩 App：人已经切走就把这一层收起来，回来再盖回去。
             // 锁本身没解，计时也不清零，所以回来还是锁着。
             boolean target = isTargetForeground(st);
-            if (leftTarget && target && st.fgSeq != leftAtSeq) {
-                // 离开之后又收到一次目标 App 的窗口事件，说明真的回来了
+            if (leftTarget && target && isTargetOnTop(st) && st.fgSeq != leftAtSeq) {
+                // 只有目标 App 真的在最上面才算回来；最近任务里的任务卡不算
                 leftTarget = false;
             }
             boolean covering = preview || Scope.GLOBAL.equals(scope)
@@ -156,6 +156,12 @@ public class GuardService extends Service {
     /** 前台是不是还停在目标 App 上；桌面和别的应用都算切走，系统弹窗不算 */
     private boolean isTargetForeground(GuardState st) {
         String pkg = st.fgPackage;
+        return pkg != null && Prefs.targets(this).contains(pkg);
+    }
+
+    /** 目标 App 是不是真的在最上面；最近任务、桌面、系统界面都不算 */
+    private boolean isTargetOnTop(GuardState st) {
+        String pkg = st.topPackage;
         return pkg != null && Prefs.targets(this).contains(pkg);
     }
 

@@ -29,6 +29,8 @@ public class ShieldTest {
         Prefs.wipe(app);
         st = GuardState.get();
         st.fgPackage = "";
+        st.topPackage = "";
+        st.fgSeq = 0L;
         st.lastScrollAt = 0L;
     }
 
@@ -49,15 +51,18 @@ public class ShieldTest {
         Shield.onWindow(st, "com.android.permissioncontroller");
 
         assertEquals("下拉通知栏不该把计时清掉", Prefs.DOUYIN, st.fgPackage);
+        assertEquals("但最上层要记成最后那个系统窗口", "com.android.permissioncontroller", st.topPackage);
     }
 
     @Test
     public void ourOwnOverlayWindowIsNotARealSwitch() {
         st.fgPackage = Prefs.BILI;
 
+        st.topPackage = Prefs.BILI;
         Shield.onWindow(st, app.getPackageName());
 
         assertEquals("遮罩自己的窗口不该把前台换成自己", Prefs.BILI, st.fgPackage);
+        assertEquals("也不该占住最上层", Prefs.BILI, st.topPackage);
     }
 
     @Test
@@ -108,6 +113,7 @@ public class ShieldTest {
         Shield.onGone(st);
 
         assertEquals("", st.fgPackage);
+        assertEquals("", st.topPackage);
     }
 
     @Test

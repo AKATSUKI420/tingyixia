@@ -43,7 +43,13 @@ final class Shield {
     static void onWindow(GuardState st, String pkg, String selfPackage) {
         // 关键：遮罩自己也是前台窗口。如果把它记成前台，服务会以为你切走了，
         // 收起遮罩；收起后抖音/B 站又变回前台，遮罩再盖上——就成了闪屏。
-        if (isNoise(pkg) || pkg.equals(selfPackage)) {
+        if (pkg == null || pkg.equals(selfPackage)) {
+            return;
+        }
+        // 系统界面也要记最上层是谁：切最近任务时，任务卡可能报出抖音包名，
+        // 但最上面其实是系统界面，不能据此把遮罩盖回来。
+        st.topPackage = pkg;
+        if (isNoise(pkg)) {
             return;
         }
         st.fgPackage = pkg;
@@ -64,5 +70,6 @@ final class Shield {
     /** 无障碍断了，就当不知道现在在哪 */
     static void onGone(GuardState st) {
         st.fgPackage = "";
+        st.topPackage = "";
     }
 }
