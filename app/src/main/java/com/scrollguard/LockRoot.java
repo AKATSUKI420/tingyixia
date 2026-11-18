@@ -12,6 +12,7 @@ public class LockRoot extends FrameLayout {
 
     private boolean hadWindowFocus;
     private Runnable onFocusLost;
+    private Runnable onExitRequested;
 
     public LockRoot(Context c) {
         super(c);
@@ -28,6 +29,11 @@ public class LockRoot extends FrameLayout {
     /** 只在真正失去焦点时通知；窗口刚挂上时那次 false 不算。 */
     public void setOnFocusLost(Runnable r) {
         onFocusLost = r;
+    }
+
+    /** Home / 最近任务键：遮罩自己收不到焦点丢失时，靠这个先把窗口让开。 */
+    public void setOnExitRequested(Runnable r) {
+        onExitRequested = r;
     }
 
     @Override
@@ -53,6 +59,13 @@ public class LockRoot extends FrameLayout {
     public boolean dispatchKeyEvent(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.KEYCODE_BACK) {
             return true;
+        }
+        if (e.getAction() == KeyEvent.ACTION_DOWN
+                && (e.getKeyCode() == KeyEvent.KEYCODE_HOME
+                || e.getKeyCode() == KeyEvent.KEYCODE_APP_SWITCH)) {
+            if (onExitRequested != null) {
+                onExitRequested.run();
+            }
         }
         return super.dispatchKeyEvent(e);
     }

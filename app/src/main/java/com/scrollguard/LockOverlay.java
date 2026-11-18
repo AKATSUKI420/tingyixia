@@ -217,11 +217,13 @@ public final class LockOverlay {
         transition++;
         onUnlock = unlockCallback;
         if (v instanceof LockRoot) {
-            ((LockRoot) v).setOnFocusLost(() -> {
+            Runnable leave = () -> {
                 if (onFocusLost != null) {
                     onFocusLost.run();
                 }
-            });
+            };
+            ((LockRoot) v).setOnFocusLost(leave);
+            ((LockRoot) v).setOnExitRequested(leave);
         }
         shownAt = SystemClock.elapsedRealtime();
         autoUnlockMin = autoMinutes;

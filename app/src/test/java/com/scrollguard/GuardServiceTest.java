@@ -2,6 +2,7 @@ package com.scrollguard;
 
 import android.app.Application;
 import android.content.Intent;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.TextView;
 
@@ -369,6 +370,31 @@ public class GuardServiceTest {
 
         assertTrue("真的回到抖音再盖", overlay.isCovering());
         assertEquals("回来不该重复记拦截", 1, Prefs.todayLocks(app));
+    }
+
+    @Test
+    public void homeKeyHidesTheMaskWithoutWaitingForAccessibility() {
+        GuardState st = GuardState.get();
+        st.fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(61_000);
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue(overlay.isCovering());
+
+        View root = viewOf(overlay);
+        root.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_HOME));
+        idle(400);
+
+        assertTrue("锁本身还在", overlay.isShowing());
+        assertFalse("按 Home 后遮罩该让开桌面", overlay.isCovering());
+        assertFalse("窗口要从 WindowManager 摘掉", overlay.isAttached());
+
+        Shield.onWindow(st, Prefs.DOUYIN);
+        idle(1_000);
+
+        assertTrue("回到抖音再盖", overlay.isCovering());
+        assertEquals("不重复记拦截", 1, Prefs.todayLocks(app));
     }
 
     @Test
