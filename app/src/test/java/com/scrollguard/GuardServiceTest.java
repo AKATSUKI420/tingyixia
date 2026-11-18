@@ -160,61 +160,6 @@ public class GuardServiceTest {
         assertEquals(0, Prefs.todayLocks(app));
     }
 
-    // ---------- 问题2：只遮罩 App / 全局遮罩 ----------
-
-    @Test
-    public void globalModeCountsAnyAppEvenInLandscape() {
-        Prefs.setScope(app, Scope.GLOBAL);
-        RuntimeEnvironment.setQualifiers("+land");
-        GuardState.get().fgPackage = "com.tencent.mm";
-        GuardService svc = start();
-
-        idle(61_000);
-
-        assertTrue("全局模式横屏也该拦", overlayOf(svc).isShowing());
-        assertEquals(1, Prefs.todayLocks(app));
-        assertEquals(Text.lockTitle(1, true), titleOf(svc));
-    }
-
-    @Test
-    public void globalModeSkipsOurOwnApp() {
-        Prefs.setScope(app, Scope.GLOBAL);
-        GuardState.get().fgPackage = app.getPackageName();
-        GuardService svc = start();
-
-        idle(61_000);
-
-        assertFalse("在自己首页上不该计时", GuardState.get().locked);
-        assertFalse(overlayOf(svc).isShowing());
-        assertEquals(0, Prefs.todayLocks(app));
-    }
-
-    @Test
-    public void globalModeDoesNotNeedTheTargetSwitches() {
-        Prefs.setScope(app, Scope.GLOBAL);
-        Prefs.setTarget(app, Prefs.DOUYIN, false);
-        Prefs.setTarget(app, Prefs.BILI, false);
-        GuardState.get().fgPackage = "com.tencent.mm";
-        GuardService svc = start();
-
-        idle(61_000);
-
-        assertTrue("全局模式不看那两个开关", overlayOf(svc).isShowing());
-        assertEquals(1, Prefs.todayLocks(app));
-    }
-
-    @Test
-    public void globalModeIgnoresSystemWindows() {
-        Prefs.setScope(app, Scope.GLOBAL);
-        GuardState.get().fgPackage = "com.android.systemui";
-        GuardService svc = start();
-
-        idle(61_000);
-
-        assertFalse(overlayOf(svc).isShowing());
-        assertEquals(0, Prefs.todayLocks(app));
-    }
-
     /** v1.1：切到别的 App 只是暂停，攒下的时间不清零 */
     @Test
     public void switchingAwayKeepsTheCount() {
@@ -469,24 +414,6 @@ public class GuardServiceTest {
         assertTrue("遮罩自己的窗口不该让它收起", overlay.isShowing());
         assertTrue("遮罩应该继续盖着", overlay.isCovering());
         assertEquals("不该因为自己的窗口重复记拦截", 1, Prefs.todayLocks(app));
-    }
-
-    @Test
-    public void globalMaskStaysWhenLeavingTheApp() {
-        Prefs.setScope(app, Scope.GLOBAL);
-        GuardState st = GuardState.get();
-        st.fgPackage = Prefs.DOUYIN;
-        GuardService svc = start();
-
-        idle(61_000);
-        LockOverlay overlay = overlayOf(svc);
-        assertTrue(overlay.isCovering());
-
-        st.fgPackage = "com.tencent.mm";
-        idle(1_000);
-
-        assertTrue("全局遮罩不该跟着切走", overlay.isShowing());
-        assertTrue(overlay.isCovering());
     }
 
     @Test

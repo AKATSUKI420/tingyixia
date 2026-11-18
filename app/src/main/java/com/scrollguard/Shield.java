@@ -57,12 +57,12 @@ final class Shield {
         st.touchScroll();
     }
 
-    /** 滑了一下：App 范围只认目标应用；全局范围除了系统界面都算动静 */
-    static void onScroll(GuardState st, Set<String> targets, String pkg, boolean global) {
+    /** 滑了一下：只认目标应用 */
+    static void onScroll(GuardState st, Set<String> targets, String pkg) {
         if (pkg == null) {
             return;
         }
-        if (global ? !isNoise(pkg) : targets != null && targets.contains(pkg)) {
+        if (targets != null && targets.contains(pkg)) {
             st.touchScroll();
         }
     }

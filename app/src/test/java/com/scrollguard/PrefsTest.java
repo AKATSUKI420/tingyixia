@@ -33,7 +33,6 @@ public class PrefsTest {
         assertEquals(10L, Prefs.limitMin(c()));
         assertFalse(Prefs.enabled(c()));
         assertFalse(Prefs.strict(c()));
-        assertEquals("默认只遮罩 App", Scope.APP, Prefs.scope(c()));
         assertEquals("默认轻推淡入", Motion.FADE, Prefs.motion(c()));
         assertEquals("默认 1× 速度", 1f, Prefs.motionSpeed(c()), 0.001f);
         assertFalse("还没设密码", Prefs.hasPin(c()));
@@ -99,21 +98,6 @@ public class PrefsTest {
         assertTrue("两个都关掉是允许的", Prefs.targets(c()).isEmpty());
     }
 
-    /** 遮罩范围写进去再读还在；乱填的值退回只遮罩 App */
-    @Test
-    public void scopeSurvivesAndUnknownValuesFallBack() {
-        assertEquals(Scope.APP, Prefs.scope(c()));
-
-        Prefs.setScope(c(), Scope.GLOBAL);
-        assertEquals(Scope.GLOBAL, Prefs.scope(c()));
-
-        Prefs.setScope(c(), "nonsense");
-        assertEquals("不认识的值当只遮罩 App", Scope.APP, Prefs.scope(c()));
-
-        Prefs.setScope(c(), null);
-        assertEquals(Scope.APP, Prefs.scope(c()));
-    }
-
     /** 动效写进去再读还在；乱填的值退回轻推淡入 */
     @Test
     public void motionSurvivesAndUnknownValuesFallBack() {
@@ -169,7 +153,6 @@ public class PrefsTest {
     public void wipeClearsEverything() {
         Prefs.setLimitMin(c(), 30L);
         Prefs.setEnabled(c(), true);
-        Prefs.setScope(c(), Scope.GLOBAL);
         Prefs.setMotion(c(), Motion.SPRING);
         Prefs.setMotionSpeed(c(), 2f);
         Prefs.setTarget(c(), Prefs.BILI, false);
@@ -185,7 +168,6 @@ public class PrefsTest {
         assertEquals(0L, Prefs.todayMs(c()));
         assertEquals(0, Prefs.todayLocks(c()));
         assertEquals("清完回到默认两个都看着", 2, Prefs.targets(c()).size());
-        assertEquals("遮罩范围也回到只遮罩 App", Scope.APP, Prefs.scope(c()));
         assertEquals("动效回到默认轻推淡入", Motion.FADE, Prefs.motion(c()));
         assertEquals("速度回到 1×", 1f, Prefs.motionSpeed(c()), 0.001f);
         assertTrue("密码也没了", Prefs.pinHash(c()).isEmpty());

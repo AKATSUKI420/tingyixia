@@ -161,14 +161,10 @@ public final class LockOverlay {
     }
 
     public void show(int limitMin, Runnable unlockCallback) {
-        show(limitMin, AutoUnlock.OFF, false, unlockCallback);
+        show(limitMin, AutoUnlock.OFF, unlockCallback);
     }
 
     public void show(int limitMin, int autoMinutes, Runnable unlockCallback) {
-        show(limitMin, autoMinutes, false, unlockCallback);
-    }
-
-    public void show(int limitMin, int autoMinutes, boolean global, Runnable unlockCallback) {
         if (view != null || wm == null) {
             return;
         }
@@ -183,7 +179,7 @@ public final class LockOverlay {
         pad = v.findViewById(R.id.pad);
         content = v.findViewById(R.id.lock_content);
 
-        title.setText(Text.lockTitle(limitMin, global));
+        title.setText(Text.lockTitle(limitMin));
         footer.setText("");
         pad.setMessage("");
         pad.setListener(this::onPin);

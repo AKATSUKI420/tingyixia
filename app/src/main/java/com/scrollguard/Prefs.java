@@ -87,15 +87,6 @@ public final class Prefs {
         sp(c).edit().putBoolean("strict", v).apply();
     }
 
-    /** 遮罩范围：只遮罩 App（默认），还是全局遮罩 */
-    public static String scope(Context c) {
-        return Scope.normalize(sp(c).getString("scope", Scope.APP));
-    }
-
-    public static void setScope(Context c, String v) {
-        sp(c).edit().putString("scope", Scope.normalize(v)).apply();
-    }
-
     /** 遮罩出现、消失的动效；默认轻推淡入。 */
     public static String motion(Context c) {
         return Motion.normalize(sp(c).getString("motion", Motion.DEFAULT));

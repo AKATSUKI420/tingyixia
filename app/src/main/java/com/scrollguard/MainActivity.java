@@ -120,15 +120,6 @@ public class MainActivity extends Activity {
         Ui.header(root, "规则");
         LinearLayout rules = Ui.card(this);
 
-        TextView scopeVal = Ui.value(this, Scope.label(this));
-        scopeVal.setTextColor(Ui.col(this, R.color.text));
-        LinearLayout scopeRow = Ui.row(this, "遮罩范围",
-                Scope.isGlobal(this) ? "整台手机都算；按 Home 也盖着" : "只算抖音 / B 站；切走就收起",
-                scopeVal);
-        Ui.tap(scopeRow, this::pickScope);
-        rules.addView(scopeRow);
-        rules.addView(Ui.divider(this));
-
         TextView dur = Ui.value(this, Text.limit(Prefs.limitMin(this)));
         dur.setTextColor(Ui.col(this, R.color.text));
         LinearLayout r1 = Ui.row(this, "连着刷多久就拦", null, dur);
@@ -157,26 +148,17 @@ public class MainActivity extends Activity {
         rules.addView(r3b);
         rules.addView(Ui.divider(this));
 
-        if (Scope.isGlobal(this)) {
-            rules.addView(Ui.row(this, "不管哪个应用", "横竖屏都算，攒的是同一个时长", null));
-        } else {
-            rules.addView(Ui.row(this, "抖音", null, switchTarget(Prefs.DOUYIN)));
-            rules.addView(Ui.divider(this));
-            rules.addView(Ui.row(this, "哔哩哔哩", null, switchTarget(Prefs.BILI)));
-        }
+        rules.addView(Ui.row(this, "抖音", null, switchTarget(Prefs.DOUYIN)));
+        rules.addView(Ui.divider(this));
+        rules.addView(Ui.row(this, "哔哩哔哩", null, switchTarget(Prefs.BILI)));
         rules.addView(Ui.divider(this));
         rules.addView(Ui.row(this, "只在真有动静时算",
                 "开着更接近\"真的在刷\"，但可能漏算", strictSwitch()));
         root.addView(rules);
 
         TextView note = new TextView(this);
-        if (Scope.isGlobal(this)) {
-            note.setText("屏幕亮着、手机在用就算，横竖屏都算；桌面、系统界面和本应用不算。"
-                    + "按 Home 遮罩也不会消失，直到输密码或自动解开；攒下的时间不清零。");
-        } else {
-            note.setText("竖着拿、在抖音或 B 站里、连着看才算。切走、熄屏、横过来只是暂停计时，"
-                    + "攒下的时间不清零；切走时遮罩自动收起，回来会再盖住。只有输对密码才从零开始。");
-        }
+        note.setText("竖着拿、在抖音或 B 站里、连着看才算。切走、熄屏、横过来只是暂停计时，"
+                + "攒下的时间不清零；切走时遮罩自动收起，回来会再盖住。只有输对密码才从零开始。");
         note.setTextSize(13);
         note.setTextColor(Ui.col(this, R.color.dim));
         note.setLineSpacing(Ui.dp(this, 3), 1f);
@@ -322,8 +304,7 @@ public class MainActivity extends Activity {
             setStatus("正在计时 " + Text.mmss(st.countedMs)
                     + " / " + Text.limit(Prefs.limitMin(this)), R.color.good);
         } else {
-            setStatus(Scope.isGlobal(this) ? "在看着 · 现在没在用" : "在看着 · 现在没在刷",
-                    R.color.accent);
+            setStatus("在看着 · 现在没在刷", R.color.accent);
         }
     }
 
@@ -354,21 +335,6 @@ public class MainActivity extends Activity {
                     Prefs.setAutoUnlockMin(this, v);
                     build();
                 });
-    }
-
-    private void pickScope() {
-        final String[] labels = {Scope.LABEL_APP, Scope.LABEL_GLOBAL};
-        final int checked = Scope.isGlobal(this) ? 1 : 0;
-        new AlertDialog.Builder(this)
-                .setTitle("遮罩范围")
-                .setSingleChoiceItems(labels, checked, (d, which) -> {
-                    Prefs.setScope(this, which == 0 ? Scope.APP : Scope.GLOBAL);
-                    d.dismiss();
-                    build();
-                    updateStatus();
-                })
-                .setNegativeButton("算了", null)
-                .show();
     }
 
     private void pickMotion() {

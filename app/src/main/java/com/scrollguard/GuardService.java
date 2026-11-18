@@ -35,7 +35,6 @@ public class GuardService extends Service {
     private long lastTick;
     private long lastPlayCheck;
     private boolean playValue = true;
-    private String notiScope;
     /** 「试一下拦截」不是真拦，别被只遮罩 App 的规则收起来 */
     private boolean preview;
     /** 遮罩窗口失去焦点后先别再盖，等真正回到目标 App 的窗口事件 */
@@ -89,8 +88,7 @@ public class GuardService extends Service {
             return;
         }
         preview = true;
-        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this),
-                Scope.isGlobal(this), () -> {
+        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this), () -> {
                     preview = false;
                     GuardState s = GuardState.get();
                     ticker.resetCounting();
@@ -113,12 +111,6 @@ public class GuardService extends Service {
             return;
         }
 
-        String scope = Prefs.scope(this);
-        if (!scope.equals(notiScope)) {
-            // 范围改了，常驻通知里的说法也跟着换
-            goForeground();
-        }
-
         GuardState st = GuardState.get();
         if (overlay.isShowing()) {
             // 只遮罩 App：人已经切走就把这一层收起来，回来再盖回去。
@@ -128,8 +120,7 @@ public class GuardService extends Service {
                 // 只有目标 App 真的在最上面才算回来；最近任务里的任务卡不算
                 leftTarget = false;
             }
-            boolean covering = preview || Scope.GLOBAL.equals(scope)
-                    || (target && !leftTarget);
+            boolean covering = preview || (target && !leftTarget);
             overlay.setCovering(covering);
             return;
         }
@@ -139,7 +130,7 @@ public class GuardService extends Service {
 
         boolean active = Ticker.active(
                 Prefs.strict(this), isPlaying(), st.scrolledWithin(Ticker.SCROLL_WINDOW_MS));
-        boolean counting = Scope.counts(this, scope, st.portrait, screenOn(), st.fgPackage,
+        boolean counting = Ticker.counts(st.portrait, screenOn(),
                 Prefs.targets(this).contains(st.fgPackage), active);
 
         boolean due = ticker.advance(dt, counting, Prefs.limitMin(this) * 60000L);
@@ -174,9 +165,6 @@ public class GuardService extends Service {
         if (preview || !overlay.isCovering()) {
             return;
         }
-        if (Scope.GLOBAL.equals(Prefs.scope(this))) {
-            return;
-        }
         GuardState st = GuardState.get();
         leftTarget = true;
         leftAtSeq = st.fgSeq;
@@ -199,8 +187,7 @@ public class GuardService extends Service {
         st.locked = true;
         leftTarget = false;
         Prefs.bumpTodayLocks(this);
-        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this),
-                Scope.isGlobal(this), () -> {
+        overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this), () -> {
                     GuardState s = GuardState.get();
                     ticker.resetCounting();
                     s.countedMs = 0L;
@@ -261,13 +248,8 @@ public class GuardService extends Service {
                 this, 0, new Intent(this, MainActivity.class),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        String line;
-        if (Scope.isGlobal(this)) {
-            line = "全局遮罩 · 整台手机连着用 " + Prefs.limitMin(this) + " 分钟会拦一下";
-        } else {
-            line = "只遮罩抖音 / 哔哩哔哩 · 竖屏连着刷 "
-                    + Prefs.limitMin(this) + " 分钟会拦一下";
-        }
+        String line = "只遮罩抖音 / 哔哩哔哩 · 竖屏连着刷 "
+                + Prefs.limitMin(this) + " 分钟会拦一下";
         if (Prefs.autoUnlockMin(this) > 0) {
             line = line + "，锁 " + Prefs.autoUnlockMin(this) + " 分钟后自动解开";
         }
@@ -286,7 +268,6 @@ public class GuardService extends Service {
         } else {
             startForeground(NOTI_ID, n);
         }
-        notiScope = Prefs.scope(this);
     }
 
     @Override

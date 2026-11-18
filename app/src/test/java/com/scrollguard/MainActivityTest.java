@@ -213,57 +213,25 @@ public class MainActivityTest {
         assertTrue("填错了不该关掉框", d.isShowing());
     }
 
-    // ---------- 问题2：只遮罩 App / 全局遮罩 ----------
+    // ---------- 只遮罩 App，全局遮罩已下线 ----------
 
     @Test
-    public void scopeDefaultsToAppOnlyWithTargetSwitches() {
+    public void onlyAppMaskIsLeftWithoutAGlobalChoice() {
         Pin.save(app, "123456");
         MainActivity a = open();
 
-        assertTrue("规则里该有遮罩范围", hasText(a.findViewById(android.R.id.content), "遮罩范围"));
-        assertTrue(hasText(a.findViewById(android.R.id.content), Scope.LABEL_APP));
-        assertTrue("只遮罩 App 要说清楚切走会收起",
-                hasText(a.findViewById(android.R.id.content), "只算抖音 / B 站；切走就收起"));
+        assertFalse("不该再有遮罩范围选项",
+                hasText(a.findViewById(android.R.id.content), "遮罩范围"));
+        assertFalse("不该再出现全局遮罩",
+                hasText(a.findViewById(android.R.id.content), "全局遮罩"));
+        assertFalse("不该再出现整台手机口径",
+                hasText(a.findViewById(android.R.id.content), "不管哪个应用"));
         assertTrue(hasText(a.findViewById(android.R.id.content), "抖音"));
         assertTrue(hasText(a.findViewById(android.R.id.content), "哔哩哔哩"));
-    }
-
-    @Test
-    public void scopeCanSwitchToTheWholePhone() {
-        Pin.save(app, "123456");
-        MainActivity a = open();
-
-        View row = findClickableRow(a.findViewById(android.R.id.content), "遮罩范围");
-        assertNotNull("规则里找不到遮罩范围那一行", row);
-        row.performClick();
-        ShadowLooper.shadowMainLooper().idle();
-
-        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
-        assertNotNull("点开没弹框", d);
-        d.getListView().performItemClick(null, 1, 1);
-        ShadowLooper.shadowMainLooper().idle();
-
-        assertEquals("选了全局遮罩", Scope.GLOBAL, Prefs.scope(app));
-        assertFalse("选完该关框", d.isShowing());
-        assertTrue(hasText(a.findViewById(android.R.id.content), Scope.LABEL_GLOBAL));
-        assertTrue("全局模式该说清楚按 Home 也盖着",
-                hasText(a.findViewById(android.R.id.content), "整台手机都算；按 Home 也盖着"));
-        assertTrue("全局模式该有一句说明",
-                hasText(a.findViewById(android.R.id.content), "不管哪个应用"));
-        assertFalse("全局模式不该再显示单个 App 开关",
-                hasText(a.findViewById(android.R.id.content), "抖音"));
-        assertFalse(hasText(a.findViewById(android.R.id.content), "哔哩哔哩"));
-    }
-
-    @Test
-    public void globalScopeIsRememberedWhenReopening() {
-        Pin.save(app, "123456");
-        Prefs.setScope(app, Scope.GLOBAL);
-        MainActivity a = open();
-
-        assertTrue(hasText(a.findViewById(android.R.id.content), Scope.LABEL_GLOBAL));
-        assertTrue(hasText(a.findViewById(android.R.id.content), "不管哪个应用"));
-        assertFalse(hasText(a.findViewById(android.R.id.content), "抖音"));
+        assertTrue("说明里该讲清楚切走会收起",
+                hasText(a.findViewById(android.R.id.content),
+                        "竖着拿、在抖音或 B 站里、连着看才算。切走、熄屏、横过来只是暂停计时，"
+                                + "攒下的时间不清零；切走时遮罩自动收起，回来会再盖住。只有输对密码才从零开始。"));
     }
 
     // ---------- 问题：遮罩动画可切换 ----------
