@@ -96,6 +96,15 @@ public final class Prefs {
         sp(c).edit().putString("scope", Scope.normalize(v)).apply();
     }
 
+    /** 遮罩出现、消失的动效；默认轻推淡入。 */
+    public static String motion(Context c) {
+        return Motion.normalize(sp(c).getString("motion", Motion.DEFAULT));
+    }
+
+    public static void setMotion(Context c, String v) {
+        sp(c).edit().putString("motion", Motion.normalize(v)).apply();
+    }
+
     public static Set<String> targets(Context c) {
         Set<String> def = new HashSet<>();
         def.add(DOUYIN);

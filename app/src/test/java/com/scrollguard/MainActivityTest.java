@@ -266,6 +266,38 @@ public class MainActivityTest {
         assertFalse(hasText(a.findViewById(android.R.id.content), "抖音"));
     }
 
+    // ---------- 问题：遮罩动画可切换 ----------
+
+    @Test
+    public void motionDefaultsToFade() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        assertTrue("规则里该有遮罩动画", hasText(a.findViewById(android.R.id.content), "遮罩动画"));
+        assertTrue(hasText(a.findViewById(android.R.id.content), Motion.LABEL_FADE));
+        assertEquals(Motion.FADE, Prefs.motion(app));
+    }
+
+    @Test
+    public void motionCanSwitchToSpring() {
+        Pin.save(app, "123456");
+        MainActivity a = open();
+
+        View row = findClickableRow(a.findViewById(android.R.id.content), "遮罩动画");
+        assertNotNull("规则里找不到遮罩动画那一行", row);
+        row.performClick();
+        ShadowLooper.shadowMainLooper().idle();
+
+        AlertDialog d = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull("点开没弹框", d);
+        d.getListView().performItemClick(null, 3, 3);
+        ShadowLooper.shadowMainLooper().idle();
+
+        assertEquals("选了轻弹", Motion.SPRING, Prefs.motion(app));
+        assertFalse("选完该关框", d.isShowing());
+        assertTrue(hasText(a.findViewById(android.R.id.content), Motion.LABEL_SPRING));
+    }
+
     private static View findClickableRow(View v, String title) {        if (v instanceof ViewGroup && !(v instanceof TextView)) {
             ViewGroup g = (ViewGroup) v;
             if (g.isClickable() && hasText(g, title)) {

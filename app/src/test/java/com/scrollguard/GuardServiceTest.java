@@ -468,8 +468,14 @@ public class GuardServiceTest {
         assertTrue("两分钟还没到，不该放人", overlay.isShowing());
 
         idle(61_000);
+        idle(2_000); // 退场动画走完
 
-        assertFalse("到点了应该自己解开", overlay.isShowing());
+        assertFalse("到点了应该自己解开；showing=" + overlay.isShowing()
+                        + " attached=" + overlay.isAttached()
+                        + " covering=" + overlay.isCovering()
+                        + " locked=" + GuardState.get().locked
+                        + " counted=" + GuardState.get().countedMs,
+                overlay.isShowing());
         assertFalse(GuardState.get().locked);
         assertTrue("自动解开后也该从头算", GuardState.get().countedMs < 3000L);
     }

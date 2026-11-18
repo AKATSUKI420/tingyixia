@@ -34,6 +34,7 @@ public class PrefsTest {
         assertFalse(Prefs.enabled(c()));
         assertFalse(Prefs.strict(c()));
         assertEquals("默认只遮罩 App", Scope.APP, Prefs.scope(c()));
+        assertEquals("默认轻推淡入", Motion.FADE, Prefs.motion(c()));
         assertFalse("还没设密码", Prefs.hasPin(c()));
         assertEquals(0L, Prefs.todayMs(c()));
         assertEquals(0, Prefs.todayLocks(c()));
@@ -112,6 +113,18 @@ public class PrefsTest {
         assertEquals(Scope.APP, Prefs.scope(c()));
     }
 
+    /** 动效写进去再读还在；乱填的值退回轻推淡入 */
+    @Test
+    public void motionSurvivesAndUnknownValuesFallBack() {
+        assertEquals(Motion.FADE, Prefs.motion(c()));
+
+        Prefs.setMotion(c(), Motion.SHEET);
+        assertEquals(Motion.SHEET, Prefs.motion(c()));
+
+        Prefs.setMotion(c(), "nonsense");
+        assertEquals("不认识的值当轻推淡入", Motion.FADE, Prefs.motion(c()));
+    }
+
     /** E4：跨天靠日键分开——换了日子就是另一个键，自然从 0 开始 */
     @Test
     public void dayKeySplitsDays() {
@@ -141,6 +154,7 @@ public class PrefsTest {
         Prefs.setLimitMin(c(), 30L);
         Prefs.setEnabled(c(), true);
         Prefs.setScope(c(), Scope.GLOBAL);
+        Prefs.setMotion(c(), Motion.SPRING);
         Prefs.setTarget(c(), Prefs.BILI, false);
         Prefs.addTodayMs(c(), 120000L);
         Prefs.bumpTodayLocks(c());
@@ -155,6 +169,7 @@ public class PrefsTest {
         assertEquals(0, Prefs.todayLocks(c()));
         assertEquals("清完回到默认两个都看着", 2, Prefs.targets(c()).size());
         assertEquals("遮罩范围也回到只遮罩 App", Scope.APP, Prefs.scope(c()));
+        assertEquals("动效回到默认轻推淡入", Motion.FADE, Prefs.motion(c()));
         assertTrue("密码也没了", Prefs.pinHash(c()).isEmpty());
     }
 

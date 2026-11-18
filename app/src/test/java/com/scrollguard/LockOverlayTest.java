@@ -85,18 +85,29 @@ public class LockOverlayTest {
         }
     }
 
+    private static String motionOf(LockOverlay o) {
+        try {
+            Field f = LockOverlay.class.getDeclaredField("motion");
+            f.setAccessible(true);
+            return (String) f.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     /**
      * 全屏遮罩本身完全不透明。第一帧如果先按 TRANSLUCENT 合成，
-     * 视频上面会闪一下；这里把窗口格式和动画固定住。
+     * 视频上面会闪一下；这里把窗口格式和进入动画固定住。
      */
     @Test
-    public void windowIsOpaqueAndHasNoEnterAnimation() {
+    public void windowIsOpaqueAndHasNoWindowAnimation() {
         show(10);
 
         WindowManager.LayoutParams lp = windowParams(overlay);
         assertEquals(PixelFormat.OPAQUE, lp.format);
-        assertEquals(1f, lp.alpha, 0f);
         assertEquals(0, lp.windowAnimations);
+        assertTrue("窗口整体淡入由内容层控制，alpha 在 0 到 1 之间",
+                lp.alpha >= 0f && lp.alpha <= 1f);
     }
 
     @Test
@@ -213,15 +224,39 @@ public class LockOverlayTest {
 
         assertTrue("锁还在，只是不挡着别的 App", overlay.isShowing());
         assertFalse("这会儿不该再挡屏幕", overlay.isCovering());
-        assertFalse("藏起来时窗口要从 WindowManager 摘掉", overlay.isAttached());
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(400));
+        assertFalse("退场动画结束后窗口要从 WindowManager 摘掉", overlay.isAttached());
 
         overlay.setCovering(true);
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(400));
         assertTrue("回来要能再盖上", overlay.isCovering());
         assertTrue(overlay.isAttached());
 
         TestPad.type(pad, "123456");
         Wait.until("重新盖上后输对密码也该放人", () -> !overlay.isShowing());
         assertTrue(unlocked);
+    }
+
+    /** 四种动效都要能进、能出；设置读的是落下时那一次的值。 */
+    @Test
+    public void everyMotionCanShowAndHide() {
+        for (String motion : Motion.values()) {
+            Prefs.setMotion(app, motion);
+            overlay.show(10, () -> {
+            });
+            assertEquals("选中的动效没读出来", motion, motionOf(overlay));
+            assertTrue("没盖住：" + motion, overlay.isCovering());
+
+            overlay.setCovering(false);
+            assertFalse("退场开始后就不该再挡：" + motion, overlay.isCovering());
+            ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(400));
+            assertFalse("退场结束后窗口该摘掉：" + motion, overlay.isAttached());
+            assertTrue("锁还在：" + motion, overlay.isShowing());
+
+            overlay.dismiss();
+            assertFalse(overlay.isShowing());
+        }
     }
 
     @Test

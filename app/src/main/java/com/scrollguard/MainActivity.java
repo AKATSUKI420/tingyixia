@@ -143,6 +143,13 @@ public class MainActivity extends Activity {
         rules.addView(r2);
         rules.addView(Ui.divider(this));
 
+        TextView motionVal = Ui.value(this, Motion.label(Prefs.motion(this)));
+        motionVal.setTextColor(Ui.col(this, R.color.text));
+        LinearLayout r3 = Ui.row(this, "遮罩动画", "出现和消失时怎么动", motionVal);
+        Ui.tap(r3, this::pickMotion);
+        rules.addView(r3);
+        rules.addView(Ui.divider(this));
+
         if (Scope.isGlobal(this)) {
             rules.addView(Ui.row(this, "不管哪个应用", "横竖屏都算，攒的是同一个时长", null));
         } else {
@@ -352,6 +359,20 @@ public class MainActivity extends Activity {
                     d.dismiss();
                     build();
                     updateStatus();
+                })
+                .setNegativeButton("算了", null)
+                .show();
+    }
+
+    private void pickMotion() {
+        final String[] labels = Motion.labels();
+        final int checked = Motion.indexOf(Prefs.motion(this));
+        new AlertDialog.Builder(this)
+                .setTitle("遮罩动画")
+                .setSingleChoiceItems(labels, checked, (d, which) -> {
+                    Prefs.setMotion(this, Motion.values()[which]);
+                    d.dismiss();
+                    build();
                 })
                 .setNegativeButton("算了", null)
                 .show();
