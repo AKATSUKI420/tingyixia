@@ -1,8 +1,5 @@
 package com.scrollguard;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.os.Handler;
@@ -37,7 +34,8 @@ public final class LockOverlay {
     private boolean hiding;
     private boolean unlocking;
     private int transition;
-    private ValueAnimator windowFade;
+    private Runnable contentFrame;
+    private boolean contentAnimating;
     private String motion = Motion.DEFAULT;
     private PinPadView pad;
     private TextView footer;
@@ -113,8 +111,8 @@ public final class LockOverlay {
             hiding = false;
             lp.flags &= ~(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+            lp.alpha = 0f;
             if (!attached) {
-                lp.alpha = 0f;
                 try {
                     wm.addView(view, lp);
                     attached = true;
@@ -128,7 +126,8 @@ public final class LockOverlay {
                     // 窗口已经被系统拿掉了，下一次 show 会重新来
                 }
             }
-            startWindowFade(1f, enterBackgroundMs(), transition, null);
+            view.setAlpha(1f);
+            prepareContentIn();
             startContentIn();
             handler.removeCallbacks(ticker);
             handler.postDelayed(ticker, 1000);
@@ -147,8 +146,7 @@ public final class LockOverlay {
         } catch (Throwable ignored) {
             // 窗口已经被系统拿掉了
         }
-        startWindowFade(0f, exitBackgroundMs(), transition, this::removeWindow);
-        startContentOut();
+        startExitFrame(this::removeWindow);
     }
 
     /** 遮罩下面那行字：停了多久；设了自动解开就再缀一句还剩多久。 */
@@ -230,7 +228,7 @@ public final class LockOverlay {
         fails = 0;
         cooldownUntil = 0;
         checking = false;
-        startWindowFade(1f, enterBackgroundMs(), transition, null);
+        view.setAlpha(1f);
         startContentIn();
         handler.postDelayed(ticker, 1000);
     }
@@ -238,10 +236,7 @@ public final class LockOverlay {
     public void dismiss() {
         transition++;
         handler.removeCallbacksAndMessages(null);
-        cancelWindowFade();
-        if (content != null) {
-            content.animate().cancel();
-        }
+        cancelContentFrame();
         View v = view;
         view = null;
         attached = false;
@@ -333,18 +328,13 @@ public final class LockOverlay {
                 // 窗口已经被系统拿掉了
             }
         }
-        int gen = transition;
-        startWindowFade(0f, exitBackgroundMs(), gen, () -> {
-            if (gen != transition) {
-                return;
-            }
+        startExitFrame(() -> {
             removeWindow();
             cleanupAfterDismiss();
             if (cb != null) {
                 cb.run();
             }
         });
-        startContentOut();
     }
 
     private void removeWindow() {
@@ -361,7 +351,7 @@ public final class LockOverlay {
 
     private void cleanupAfterDismiss() {
         handler.removeCallbacksAndMessages(null);
-        cancelWindowFade();
+        cancelContentFrame();
         view = null;
         content = null;
         pad = null;
@@ -374,149 +364,191 @@ public final class LockOverlay {
         unlocking = false;
     }
 
-    private void cancelWindowFade() {
-        if (windowFade != null) {
-            ValueAnimator a = windowFade;
-            windowFade = null;
-            a.cancel();
+    private void setWindowAlpha(float alpha) {
+        if (lp == null || view == null) {
+            return;
+        }
+        lp.alpha = Math.max(0f, Math.min(1f, alpha));
+        try {
+            wm.updateViewLayout(view, lp);
+        } catch (Throwable ignored) {
+            // 窗口可能已经被系统拿掉
         }
     }
 
-    private void startWindowFade(float to, long duration, int gen, Runnable end) {
-        cancelWindowFade();
-        if (view == null || lp == null) {
-            if (end != null) {
-                end.run();
-            }
-            return;
+    private void cancelContentFrame() {
+        if (contentFrame != null) {
+            handler.removeCallbacks(contentFrame);
+            contentFrame = null;
         }
-        final float from = lp.alpha;
-        if (Math.abs(from - to) < 0.01f) {
-            lp.alpha = to;
-            if (end != null) {
-                end.run();
-            }
-            return;
-        }
-        ValueAnimator a = ValueAnimator.ofFloat(from, to);
-        a.setDuration(duration);
-        a.setInterpolator(to > from ? new DecelerateInterpolator() : new AccelerateInterpolator());
-        a.addUpdateListener(anim -> {
-            if (view == null || lp == null) {
-                return;
-            }
-            lp.alpha = (float) anim.getAnimatedValue();
-            try {
-                wm.updateViewLayout(view, lp);
-            } catch (Throwable ignored) {
-                // 窗口已经被系统拿掉了
-            }
-        });
-        a.addListener(new AnimatorListenerAdapter() {
-            private boolean canceled;
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                canceled = true;
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                if (canceled || gen != transition || windowFade != a) {
-                    return;
-                }
-                windowFade = null;
-                if (end != null) {
-                    end.run();
-                }
-            }
-        });
-        windowFade = a;
-        a.start();
+        contentAnimating = false;
     }
 
     private void prepareContentIn() {
+        cancelContentFrame();
         if (content == null) {
             return;
         }
-        content.animate().cancel();
         if (Motion.STAGGER.equals(motion)) {
             content.setAlpha(1f);
+            for (View v : staggerBlocks()) {
+                if (v != null) {
+                    v.setAlpha(0f);
+                    v.setTranslationY(Ui.dp(ctx, 4));
+                }
+            }
+        } else {
+            content.setAlpha(0f);
             content.setTranslationY(0f);
             content.setScaleX(1f);
             content.setScaleY(1f);
-            for (View v : staggerBlocks()) {
-                v.setAlpha(0f);
-                v.setTranslationY(Ui.dp(ctx, 4));
-            }
-            return;
         }
-        content.setAlpha(0f);
-        content.setTranslationY(startOffsetDp());
-        content.setScaleX(startScale());
-        content.setScaleY(startScale());
     }
 
     private void startContentIn() {
-        if (content == null) {
+        if (content == null || view == null) {
             return;
         }
-        content.animate().cancel();
-        if (Motion.STAGGER.equals(motion)) {
-            content.setAlpha(1f);
-            View[] blocks = staggerBlocks();
-            for (int i = 0; i < blocks.length; i++) {
-                View v = blocks[i];
-                v.setAlpha(0f);
-                v.setTranslationY(Ui.dp(ctx, 4));
-                v.animate()
-                        .alpha(1f)
-                        .translationY(0f)
-                        .setStartDelay(i * 25L)
-                        .setDuration(180)
-                        .setInterpolator(new DecelerateInterpolator())
-                        .start();
+        cancelContentFrame();
+        contentAnimating = true;
+        final long start = SystemClock.uptimeMillis();
+        final long duration = Math.max(enterBackgroundMs(), enterContentMs());
+        contentFrame = new Runnable() {
+            @Override
+            public void run() {
+                if (!attached || view == null || content == null) {
+                    contentAnimating = false;
+                    contentFrame = null;
+                    return;
+                }
+                float t = Math.min(1f,
+                        (SystemClock.uptimeMillis() - start) / (float) duration);
+                applyEnter(t);
+                if (t < 1f) {
+                    handler.postDelayed(this, 16);
+                } else {
+                    contentAnimating = false;
+                    contentFrame = null;
+                    settleContent();
+                }
+            }
+        };
+        handler.post(contentFrame);
+    }
+
+    private void startExitFrame(Runnable end) {
+        if (content == null || view == null) {
+            if (end != null) {
+                end.run();
             }
             return;
         }
-        content.setAlpha(0f);
-        content.setTranslationY(startOffsetDp());
-        content.setScaleX(startScale());
-        content.setScaleY(startScale());
-        content.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(enterContentMs())
-                .setInterpolator(Motion.SPRING.equals(motion)
-                        ? new OvershootInterpolator(0.8f) : new DecelerateInterpolator())
-                .start();
+        cancelContentFrame();
+        contentAnimating = true;
+        final long start = SystemClock.uptimeMillis();
+        final long duration = Math.max(exitBackgroundMs(), exitContentMs()) + 16;
+        contentFrame = new Runnable() {
+            @Override
+            public void run() {
+                if (view == null || content == null) {
+                    contentAnimating = false;
+                    contentFrame = null;
+                    if (end != null) {
+                        end.run();
+                    }
+                    return;
+                }
+                float t = Math.min(1f,
+                        (SystemClock.uptimeMillis() - start) / (float) duration);
+                applyExit(t);
+                if (t < 1f) {
+                    handler.postDelayed(this, 16);
+                } else {
+                    contentAnimating = false;
+                    contentFrame = null;
+                    if (end != null) {
+                        end.run();
+                    }
+                }
+            }
+        };
+        handler.post(contentFrame);
     }
 
-    private void startContentOut() {
-        if (content == null) {
+    private void applyEnter(float t) {
+        if (view == null || content == null) {
             return;
         }
-        content.animate().cancel();
+        setWindowAlpha(Math.min(1f, t * 2.2f));
         if (Motion.STAGGER.equals(motion)) {
-            content.animate()
-                    .alpha(0f)
-                    .setDuration(120)
-                    .setInterpolator(new AccelerateInterpolator())
-                    .start();
+            content.setAlpha(1f);
+            long elapsed = (long) (t * Math.max(enterContentMs(), 1));
+            View[] blocks = staggerBlocks();
+            for (int i = 0; i < blocks.length; i++) {
+                View v = blocks[i];
+                if (v == null) {
+                    continue;
+                }
+                float bt = Math.max(0f, Math.min(1f, (elapsed - i * 25f) / 180f));
+                float be = new DecelerateInterpolator().getInterpolation(bt);
+                v.setAlpha(be);
+                v.setTranslationY(Ui.dp(ctx, 4) * (1f - be));
+            }
             return;
         }
-        content.animate()
-                .alpha(0f)
-                .translationY(Motion.SHEET.equals(motion) ? Ui.dp(ctx, 32) : endOffsetDp())
-                .scaleX(Motion.SPRING.equals(motion) ? 0.96f : 0.97f)
-                .scaleY(Motion.SPRING.equals(motion) ? 0.96f : 0.97f)
-                .setDuration(exitContentMs())
-                .setInterpolator(new AccelerateInterpolator())
-                .start();
+        float e = Motion.SPRING.equals(motion)
+                ? new OvershootInterpolator(0.8f).getInterpolation(t)
+                : new DecelerateInterpolator().getInterpolation(t);
+        content.setAlpha(Math.min(1f, t * 1.6f));
+        content.setTranslationY(Ui.dp(ctx, startOffsetDp()) * (1f - e));
+        float scale = startScale() + (1f - startScale()) * e;
+        content.setScaleX(scale);
+        content.setScaleY(scale);
     }
 
+    private void applyExit(float t) {
+        if (view == null || content == null) {
+            return;
+        }
+        float e = new AccelerateInterpolator().getInterpolation(t);
+        setWindowAlpha(1f - t);
+        content.setAlpha(1f - t);
+        int toY = Motion.SHEET.equals(motion) ? 32 : endOffsetDp();
+        content.setTranslationY(Ui.dp(ctx, toY) * e);
+        float toScale = Motion.SPRING.equals(motion) ? 0.96f : 0.97f;
+        float scale = 1f - (1f - toScale) * e;
+        content.setScaleX(scale);
+        content.setScaleY(scale);
+        if (Motion.STAGGER.equals(motion)) {
+            for (View v : staggerBlocks()) {
+                if (v != null) {
+                    v.setAlpha(1f - t);
+                }
+            }
+        }
+    }
+
+    private void settleContent() {
+        if (view == null || content == null) {
+            return;
+        }
+        view.setAlpha(1f);
+        setWindowAlpha(1f);
+        content.setAlpha(1f);
+        content.setTranslationY(0f);
+        content.setScaleX(1f);
+        content.setScaleY(1f);
+        for (View v : staggerBlocks()) {
+            if (v != null) {
+                v.setAlpha(1f);
+                v.setTranslationY(0f);
+            }
+        }
+    }
+
+    boolean hasContentAnimation() {
+        return contentAnimating;
+    }
     private View[] staggerBlocks() {
         View root = content != null ? content : view;
         if (root == null) {

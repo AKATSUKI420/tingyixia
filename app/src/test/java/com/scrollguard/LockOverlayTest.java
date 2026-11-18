@@ -111,6 +111,22 @@ public class LockOverlayTest {
     }
 
     @Test
+    public void windowFadesInEvenWhenSystemAnimationsAreOff() {
+        android.provider.Settings.Global.putFloat(app.getContentResolver(),
+                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 0f);
+
+        show(10);
+        WindowManager.LayoutParams lp = windowParams(overlay);
+        assertEquals("第一帧不能直接全亮", 0f, lp.alpha, 0.001f);
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(80));
+        assertTrue("窗口应该正在淡入，而不是一帧跳完：" + lp.alpha, lp.alpha > 0f && lp.alpha < 1f);
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(500));
+        assertEquals("淡入结束应该完全盖住", 1f, lp.alpha, 0.001f);
+    }
+
+    @Test
     public void showsLayerWithTheReason() {
         show(10);
 
@@ -247,6 +263,7 @@ public class LockOverlayTest {
             });
             assertEquals("选中的动效没读出来", motion, motionOf(overlay));
             assertTrue("没盖住：" + motion, overlay.isCovering());
+            assertTrue("动画没挂到内容上：" + motion, overlay.hasContentAnimation());
 
             overlay.setCovering(false);
             assertFalse("退场开始后就不该再挡：" + motion, overlay.isCovering());
