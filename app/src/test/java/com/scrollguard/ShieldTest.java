@@ -52,6 +52,15 @@ public class ShieldTest {
     }
 
     @Test
+    public void ourOwnOverlayWindowIsNotARealSwitch() {
+        st.fgPackage = Prefs.BILI;
+
+        Shield.onWindow(st, app.getPackageName());
+
+        assertEquals("遮罩自己的窗口不该把前台换成自己", Prefs.BILI, st.fgPackage);
+    }
+
+    @Test
     public void scrollInATargetAppCounts() {
         assertFalse(st.scrolledWithin(1000L));
 

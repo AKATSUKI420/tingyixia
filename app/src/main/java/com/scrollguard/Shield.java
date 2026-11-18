@@ -17,6 +17,9 @@ final class Shield {
             "com.google.android.packageinstaller"
     };
 
+    /** 遮罩自己的窗口，不能算作"切到了别的 App" */
+    private static final String SELF_PACKAGE = "com.scrollguard";
+
     private Shield() {
     }
 
@@ -34,7 +37,13 @@ final class Shield {
 
     /** 窗口变了：记下前台是谁，顺便当作"刚有动静" */
     static void onWindow(GuardState st, String pkg) {
-        if (isNoise(pkg)) {
+        onWindow(st, pkg, SELF_PACKAGE);
+    }
+
+    static void onWindow(GuardState st, String pkg, String selfPackage) {
+        // 关键：遮罩自己也是前台窗口。如果把它记成前台，服务会以为你切走了，
+        // 收起遮罩；收起后抖音/B 站又变回前台，遮罩再盖上——就成了闪屏。
+        if (isNoise(pkg) || pkg.equals(selfPackage)) {
             return;
         }
         st.fgPackage = pkg;

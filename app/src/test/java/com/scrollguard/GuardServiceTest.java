@@ -331,6 +331,29 @@ public class GuardServiceTest {
         assertTrue("下拉通知栏 / 最近任务不算切走", overlay.isCovering());
     }
 
+    /**
+     * 遮罩盖上去时，无障碍会收到一条 com.scrollguard 的窗口事件。
+     * 如果把它当成“切到了别的 App”，遮罩就会收起；收起后 B 站又变回前台，
+     * 遮罩再盖上——一秒一次，就是用户看到的闪屏。
+     */
+    @Test
+    public void appOnlyMaskStaysUpWhenOurOwnOverlayWindowAppears() {
+        GuardState st = GuardState.get();
+        st.fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(61_000);
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue("满一分钟该拦", overlay.isCovering());
+
+        Shield.onWindow(st, app.getPackageName());
+        idle(3_000);
+
+        assertTrue("遮罩自己的窗口不该让它收起", overlay.isShowing());
+        assertTrue("遮罩应该继续盖着", overlay.isCovering());
+        assertEquals("不该因为自己的窗口重复记拦截", 1, Prefs.todayLocks(app));
+    }
+
     @Test
     public void globalMaskStaysWhenLeavingTheApp() {
         Prefs.setScope(app, Scope.GLOBAL);
