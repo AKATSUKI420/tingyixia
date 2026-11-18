@@ -125,6 +125,16 @@ public class GuardServiceTest {
         }
     }
 
+    private static View viewOf(LockOverlay o) {
+        try {
+            Field f = LockOverlay.class.getDeclaredField("view");
+            f.setAccessible(true);
+            return (View) f.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     @Test
     public void landscapeDoesNotCount() {
         RuntimeEnvironment.setQualifiers("+land");
@@ -329,6 +339,58 @@ public class GuardServiceTest {
         Shield.onWindow(st, "com.android.systemui");
         idle(1_000);
         assertTrue("下拉通知栏 / 最近任务不算切走", overlay.isCovering());
+    }
+
+    /**
+     * 按 Home / 切最近任务时，遮罩窗口会先失去焦点，而无障碍的前台包名
+     * 可能还没来得及更新。不能干等它，先把遮罩摘掉；等目标 App 真正
+     * 再收到窗口事件（fgSeq 变了）才盖回去。
+     */
+    @Test
+    public void losingWindowFocusHidesAndReturningCoversAgain() {
+        GuardState st = GuardState.get();
+        st.fgPackage = Prefs.DOUYIN;
+        GuardService svc = start();
+
+        idle(61_000);
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue(overlay.isCovering());
+
+        View root = viewOf(overlay);
+        root.onWindowFocusChanged(true);
+        root.onWindowFocusChanged(false);
+        idle(1_000);
+
+        assertTrue("锁还在", overlay.isShowing());
+        assertFalse("按 Home / 最近任务后先别再挡着", overlay.isCovering());
+
+        Shield.onWindow(st, Prefs.DOUYIN);
+        idle(1_000);
+
+        assertTrue("真的回到抖音再盖", overlay.isCovering());
+        assertEquals("回来不该重复记拦截", 1, Prefs.todayLocks(app));
+    }
+
+    @Test
+    public void previewStaysUpWhenWindowFocusIsLost() {
+        GuardState st = GuardState.get();
+        st.fgPackage = "com.tencent.mm";
+
+        Intent i = new Intent(app, GuardService.class).setAction(GuardService.ACTION_TEST);
+        ServiceController<GuardService> c = Robolectric.buildService(GuardService.class, i);
+        GuardService svc = c.create().get();
+        c.startCommand(0, 0);
+        idle(200);
+
+        LockOverlay overlay = overlayOf(svc);
+        assertTrue(overlay.isCovering());
+
+        View root = viewOf(overlay);
+        root.onWindowFocusChanged(true);
+        root.onWindowFocusChanged(false);
+        idle(1_000);
+
+        assertTrue("试一下的预览不该被焦点变化收走", overlay.isCovering());
     }
 
     /**

@@ -27,6 +27,7 @@ public final class LockOverlay {
 
     private View view;
     private WindowManager.LayoutParams lp;
+    private boolean attached;
     private PinPadView pad;
     private TextView footer;
     private long shownAt;
@@ -35,6 +36,7 @@ public final class LockOverlay {
     private long cooldownUntil;
     private boolean checking;
     private Runnable onUnlock;
+    private Runnable onFocusLost;
 
     private final Runnable ticker = new Runnable() {
         @Override
@@ -47,9 +49,15 @@ public final class LockOverlay {
                 finishedUnlock();
                 return;
             }
-            long sec = (now - shownAt) / 1000L;
-            footer.setText(footerLine(sec, autoUnlockMin, shownAt, now));
-            handler.postDelayed(this, 1000);
+            // 藏起来的时候别再每秒改页脚；那会让一个看不见的全屏窗口一直重排，
+            // 切最近任务时被它拖出卡顿。自动解开仍然要按时检查。
+            if (attached) {
+                long sec = (now - shownAt) / 1000L;
+                footer.setText(footerLine(sec, autoUnlockMin, shownAt, now));
+            }
+            if (attached || autoUnlockMin > 0) {
+                handler.postDelayed(this, 1000);
+            }
         }
     };
 
@@ -64,8 +72,18 @@ public final class LockOverlay {
 
     /** 这会儿是不是真的挡在屏幕上；只遮罩 App 时可能还挂着但已经藏起来。 */
     public boolean isCovering() {
-        return view != null && lp != null
+        return attached && view != null && lp != null
                 && (lp.flags & WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) == 0;
+    }
+
+    /** 只给测试看：窗口是不是还挂在 WindowManager 上。 */
+    boolean isAttached() {
+        return attached;
+    }
+
+    /** 遮罩窗口失去焦点（按 Home、切最近任务、跳到别的 App）时通知服务。 */
+    public void setOnFocusLost(Runnable r) {
+        onFocusLost = r;
     }
 
     /**
@@ -73,22 +91,47 @@ public final class LockOverlay {
      * 回到目标 App 再盖回去，不重新计时，也不重复记一次拦截。
      */
     public void setCovering(boolean covering) {
-        if (view == null || lp == null || isCovering() == covering) {
+        if (view == null || lp == null) {
             return;
         }
         if (covering) {
+            if (attached && isCovering()) {
+                return;
+            }
             lp.flags &= ~(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
             lp.alpha = 1f;
-        } else {
-            lp.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-            lp.alpha = 0f;
+            if (attached) {
+                try {
+                    wm.updateViewLayout(view, lp);
+                } catch (Throwable ignored) {
+                    // 窗口已经被系统拿掉了，下一次 show 会重新来
+                }
+            } else {
+                try {
+                    wm.addView(view, lp);
+                    attached = true;
+                } catch (Throwable ignored) {
+                    return;
+                }
+            }
+            handler.removeCallbacks(ticker);
+            handler.postDelayed(ticker, 1000);
+            return;
         }
+
+        if (!attached) {
+            return;
+        }
+        lp.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        lp.alpha = 0f;
+        // 先标记为不在窗口上，removeView 触发的焦点回调就不会再收一次。
+        attached = false;
         try {
-            wm.updateViewLayout(view, lp);
+            wm.removeView(view);
         } catch (Throwable ignored) {
-            // 窗口已经被系统拿掉了，下一次 show 会重新来
+            // 已经被系统拿掉了
         }
     }
 
@@ -150,7 +193,15 @@ public final class LockOverlay {
 
         view = v;
         this.lp = lp;
+        attached = true;
         onUnlock = unlockCallback;
+        if (v instanceof LockRoot) {
+            ((LockRoot) v).setOnFocusLost(() -> {
+                if (onFocusLost != null) {
+                    onFocusLost.run();
+                }
+            });
+        }
         shownAt = SystemClock.elapsedRealtime();
         autoUnlockMin = autoMinutes;
         fails = 0;
@@ -163,6 +214,7 @@ public final class LockOverlay {
         handler.removeCallbacksAndMessages(null);
         View v = view;
         view = null;
+        attached = false;
         if (v != null) {
             try {
                 wm.removeView(v);

@@ -47,6 +47,7 @@ final class Shield {
             return;
         }
         st.fgPackage = pkg;
+        st.fgSeq++;
         st.touchScroll();
     }
 

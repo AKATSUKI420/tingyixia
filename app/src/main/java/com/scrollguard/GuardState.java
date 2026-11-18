@@ -30,6 +30,9 @@ public final class GuardState {
     /** 当前前台应用的包名，不知道就是空串；系统弹窗不覆盖它 */
     public volatile String fgPackage = "";
 
+    /** 每收到一次真正的前台切换就加一；用来判断切走之后有没有回到目标 App */
+    public volatile long fgSeq = 0L;
+
     /** 屏幕是不是竖着的（由计时服务按当前配置判定） */
     public volatile boolean portrait = true;
 

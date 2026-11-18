@@ -10,6 +10,9 @@ import android.widget.FrameLayout;
  */
 public class LockRoot extends FrameLayout {
 
+    private boolean hadWindowFocus;
+    private Runnable onFocusLost;
+
     public LockRoot(Context c) {
         super(c);
     }
@@ -20,6 +23,30 @@ public class LockRoot extends FrameLayout {
 
     public LockRoot(Context c, AttributeSet a, int defStyleAttr) {
         super(c, a, defStyleAttr);
+    }
+
+    /** 只在真正失去焦点时通知；窗口刚挂上时那次 false 不算。 */
+    public void setOnFocusLost(Runnable r) {
+        onFocusLost = r;
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasWindowFocus) {
+        super.onWindowFocusChanged(hasWindowFocus);
+        if (hasWindowFocus) {
+            hadWindowFocus = true;
+        } else if (hadWindowFocus) {
+            hadWindowFocus = false;
+            if (onFocusLost != null) {
+                onFocusLost.run();
+            }
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        hadWindowFocus = false;
+        super.onDetachedFromWindow();
     }
 
     @Override

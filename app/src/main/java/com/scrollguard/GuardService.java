@@ -38,6 +38,9 @@ public class GuardService extends Service {
     private String notiScope;
     /** 「试一下拦截」不是真拦，别被只遮罩 App 的规则收起来 */
     private boolean preview;
+    /** 遮罩窗口失去焦点后先别再盖，等真正回到目标 App 的窗口事件 */
+    private boolean leftTarget;
+    private long leftAtSeq;
 
     private final Runnable loop = new Runnable() {
         @Override
@@ -58,6 +61,7 @@ public class GuardService extends Service {
         super.onCreate();
         handler = new Handler(Looper.getMainLooper());
         overlay = new LockOverlay(this);
+        overlay.setOnFocusLost(this::onOverlayFocusLost);
         GuardState.get().serviceRunning = true;
         lastTick = SystemClock.elapsedRealtime();
         goForeground();
@@ -87,13 +91,13 @@ public class GuardService extends Service {
         preview = true;
         overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this),
                 Scope.isGlobal(this), () -> {
-            preview = false;
-            GuardState s = GuardState.get();
-            ticker.resetCounting();
-            s.countedMs = 0L;
-            s.locked = false;
-            lastTick = SystemClock.elapsedRealtime();
-        });
+                    preview = false;
+                    GuardState s = GuardState.get();
+                    ticker.resetCounting();
+                    s.countedMs = 0L;
+                    s.locked = false;
+                    lastTick = SystemClock.elapsedRealtime();
+                });
         if (!overlay.isShowing()) {
             preview = false;
         }
@@ -119,7 +123,13 @@ public class GuardService extends Service {
         if (overlay.isShowing()) {
             // 只遮罩 App：人已经切走就把这一层收起来，回来再盖回去。
             // 锁本身没解，计时也不清零，所以回来还是锁着。
-            boolean covering = preview || Scope.GLOBAL.equals(scope) || isTargetForeground(st);
+            boolean target = isTargetForeground(st);
+            if (leftTarget && target && st.fgSeq != leftAtSeq) {
+                // 离开之后又收到一次目标 App 的窗口事件，说明真的回来了
+                leftTarget = false;
+            }
+            boolean covering = preview || Scope.GLOBAL.equals(scope)
+                    || (target && !leftTarget);
             overlay.setCovering(covering);
             return;
         }
@@ -149,6 +159,24 @@ public class GuardService extends Service {
         return pkg != null && Prefs.targets(this).contains(pkg);
     }
 
+    /**
+     * 遮罩自己的窗口失去焦点：按 Home、切最近任务、跳到别的 App 都会走到这里。
+     * 这时无障碍的前台包名可能还没更新，不能干等它；先收起来，等目标 App
+     * 真正回前台（fgSeq 变了）再盖。
+     */
+    private void onOverlayFocusLost() {
+        if (preview || !overlay.isCovering()) {
+            return;
+        }
+        if (Scope.GLOBAL.equals(Prefs.scope(this))) {
+            return;
+        }
+        GuardState st = GuardState.get();
+        leftTarget = true;
+        leftAtSeq = st.fgSeq;
+        overlay.setCovering(false);
+    }
+
     private void lock() {
         GuardState st = GuardState.get();
         if (overlay.isShowing()) {
@@ -163,15 +191,17 @@ public class GuardService extends Service {
             return;
         }
         st.locked = true;
+        leftTarget = false;
         Prefs.bumpTodayLocks(this);
         overlay.show((int) Prefs.limitMin(this), Prefs.autoUnlockMin(this),
                 Scope.isGlobal(this), () -> {
-            GuardState s = GuardState.get();
-            ticker.resetCounting();
-            s.countedMs = 0L;
-            s.locked = false;
-            lastTick = SystemClock.elapsedRealtime();
-        });
+                    GuardState s = GuardState.get();
+                    ticker.resetCounting();
+                    s.countedMs = 0L;
+                    s.locked = false;
+                    leftTarget = false;
+                    lastTick = SystemClock.elapsedRealtime();
+                });
     }
 
     /** 熄屏了就不算 */
@@ -256,6 +286,7 @@ public class GuardService extends Service {
     @Override
     public void onDestroy() {
         preview = false;
+        leftTarget = false;
         flush();
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);

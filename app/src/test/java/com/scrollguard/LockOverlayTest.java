@@ -207,18 +207,35 @@ public class LockOverlayTest {
     public void hidingKeepsTheLockAndCanCoverAgain() {
         show(10);
         assertTrue(overlay.isCovering());
+        assertTrue(overlay.isAttached());
 
         overlay.setCovering(false);
 
         assertTrue("锁还在，只是不挡着别的 App", overlay.isShowing());
         assertFalse("这会儿不该再挡屏幕", overlay.isCovering());
+        assertFalse("藏起来时窗口要从 WindowManager 摘掉", overlay.isAttached());
 
         overlay.setCovering(true);
         assertTrue("回来要能再盖上", overlay.isCovering());
+        assertTrue(overlay.isAttached());
 
         TestPad.type(pad, "123456");
         Wait.until("重新盖上后输对密码也该放人", () -> !overlay.isShowing());
         assertTrue(unlocked);
+    }
+
+    @Test
+    public void hiddenOverlayStopsRepaintingItsFooter() {
+        show(10);
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(1100));
+
+        TextView footer = view(overlay).findViewById(R.id.lock_footer);
+        String before = footer.getText().toString();
+        overlay.setCovering(false);
+
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofSeconds(2));
+
+        assertEquals("藏起来后别再每秒重排页脚", before, footer.getText().toString());
     }
 
     @Test
