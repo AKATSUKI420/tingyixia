@@ -270,6 +270,24 @@ public class LockOverlayTest {
         assertTrue(unlocked);
     }
 
+    @Test
+    public void quickRecoverKeepsTheWindowTouchable() {
+        show(10);
+        assertTrue(overlay.isCovering());
+
+        overlay.setCovering(false);
+        // 不等退场动画跑完就回来：某些系统在窗口被设过
+        // NOT_TOUCHABLE 之后，不会再给同一个窗口恢复输入通道。
+        overlay.setCovering(true);
+        ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(400));
+
+        assertTrue("重新盖上后要能点", overlay.isCovering());
+        WindowManager.LayoutParams lp = windowParams(overlay);
+        assertEquals("触摸和焦点标记都要清掉",
+                0, lp.flags & (WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE));
+    }
+
     /** 四种动效都要能进、能出；设置读的是落下时那一次的值。 */
     @Test
     public void everyMotionCanShowAndHide() {

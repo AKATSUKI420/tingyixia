@@ -113,21 +113,33 @@ public final class LockOverlay {
             lp.flags &= ~(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
             lp.alpha = 0f;
-            if (!attached) {
+            // Some OEMs keep a window's input channel disabled after it was made
+            // non-touchable/non-focusable.  Re-adding the same view gives it a
+            // fresh input channel, so the PIN pad stays tappable after a quick
+            // hide/show (for example when Bilibili briefly steals focus).
+            if (attached) {
                 try {
-                    wm.addView(view, lp);
-                    attached = true;
+                    wm.removeViewImmediate(view);
                 } catch (Throwable ignored) {
-                    return;
+                    // The system may already have removed it.
                 }
-            } else {
+                attached = false;
+            }
+            try {
+                wm.addView(view, lp);
+                attached = true;
+            } catch (Throwable ignored) {
+                // Last resort: keep the existing window; it may still recover
+                // on the next layout pass.
                 try {
                     wm.updateViewLayout(view, lp);
-                } catch (Throwable ignored) {
-                    // 窗口已经被系统拿掉了，下一次 show 会重新来
+                    attached = true;
+                } catch (Throwable alsoIgnored) {
+                    return;
                 }
             }
             view.setAlpha(1f);
+            view.requestFocus();
             prepareContentIn();
             startContentIn();
             handler.removeCallbacks(ticker);
@@ -229,6 +241,7 @@ public final class LockOverlay {
         cooldownUntil = 0;
         checking = false;
         view.setAlpha(1f);
+        view.requestFocus();
         startContentIn();
         handler.postDelayed(ticker, 1000);
     }
@@ -539,6 +552,7 @@ public final class LockOverlay {
         }
         view.setAlpha(1f);
         setWindowAlpha(1f);
+        view.requestFocus();
         content.setAlpha(1f);
         content.setTranslationY(0f);
         content.setScaleX(1f);
