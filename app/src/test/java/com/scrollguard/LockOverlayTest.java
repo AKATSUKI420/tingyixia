@@ -288,6 +288,17 @@ public class LockOverlayTest {
                         | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE));
     }
 
+    @Test
+    public void hidingNeverMakesTheWindowUntouchable() {
+        show(10);
+        overlay.setCovering(false);
+
+        WindowManager.LayoutParams lp = windowParams(overlay);
+        assertEquals("退场期间也不能设成不可触摸/不可聚焦",
+                0, lp.flags & (WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE));
+    }
+
     /** 四种动效都要能进、能出；设置读的是落下时那一次的值。 */
     @Test
     public void everyMotionCanShowAndHide() {

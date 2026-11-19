@@ -106,6 +106,9 @@ public final class LockOverlay {
         }
         if (covering) {
             if (attached && isCovering()) {
+                // 窗口看着是盖着的，但输入通道可能已经被系统悄悄掐掉。
+                // 主动要一次焦点，至少别让焦点留在下面的 App 上。
+                view.requestFocus();
                 return;
             }
             transition++;
@@ -152,13 +155,9 @@ public final class LockOverlay {
         }
         transition++;
         hiding = true;
-        lp.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-        try {
-            wm.updateViewLayout(view, lp);
-        } catch (Throwable ignored) {
-            // 窗口已经被系统拿掉了
-        }
+        // 不要把窗口设成 NOT_TOUCHABLE：部分 OEM 在之后清掉这个标记时
+        // 不会恢复输入通道，遮罩会一直看得见、却怎么点都没反应。
+        // 退场动画跑完后直接把窗口摘掉，下一次重新 addView 就是新通道。
         startExitFrame(this::removeWindow);
     }
 
@@ -332,15 +331,7 @@ public final class LockOverlay {
         transition++;
         unlocking = true;
         hiding = true;
-        if (lp != null) {
-            lp.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-            try {
-                wm.updateViewLayout(view, lp);
-            } catch (Throwable ignored) {
-                // 窗口已经被系统拿掉了
-            }
-        }
+        // 同上：退场期间也不设 NOT_TOUCHABLE，动画结束直接摘窗口。
         startExitFrame(() -> {
             removeWindow();
             cleanupAfterDismiss();
