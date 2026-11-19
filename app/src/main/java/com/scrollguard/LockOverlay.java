@@ -115,7 +115,7 @@ public final class LockOverlay {
             hiding = false;
             lp.flags &= ~(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-            lp.alpha = 0f;
+            lp.alpha = 1f;
             // Some OEMs keep a window's input channel disabled after it was made
             // non-touchable/non-focusable.  Re-adding the same view gives it a
             // fresh input channel, so the PIN pad stays tappable after a quick
@@ -206,7 +206,7 @@ public final class LockOverlay {
         // The lock screen is fully opaque. Making that explicit avoids a
         // translucent-to-opaque surface swap on the first frame, which shows
         // up as a brief flash over the app underneath.
-        lp.alpha = 0f;
+        lp.alpha = 1f;
         lp.windowAnimations = 0;
 
         try {
@@ -483,7 +483,6 @@ public final class LockOverlay {
         if (view == null || content == null) {
             return;
         }
-        setWindowAlpha(Math.min(1f, t * 2.2f));
         if (Motion.STAGGER.equals(motion)) {
             content.setAlpha(1f);
             long elapsed = (long) (t * Math.max(enterContentMs(), 1));
@@ -519,7 +518,6 @@ public final class LockOverlay {
         }
         float e = new AccelerateInterpolator().getInterpolation(t);
         centerPivotIfNeeded();
-        setWindowAlpha(1f - t);
         content.setAlpha(1f - t);
         int toY = Motion.SHEET.equals(motion) ? 32 : endOffsetDp();
         content.setTranslationY(Ui.dp(ctx, toY) * e);

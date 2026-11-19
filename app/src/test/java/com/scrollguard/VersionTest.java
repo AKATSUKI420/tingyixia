@@ -25,7 +25,7 @@ public class VersionTest {
                 .getPackageManager()
                 .getPackageInfo("com.scrollguard", 0);
 
-        assertEquals("0.0.7 测试版", info.versionName);
-        assertEquals(8L, info.getLongVersionCode());
+        assertEquals("0.0.8 测试版", info.versionName);
+        assertEquals(9L, info.getLongVersionCode());
     }
 }

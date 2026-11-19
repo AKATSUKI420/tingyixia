@@ -18,8 +18,8 @@ android {
         applicationId "com.scrollguard"
         minSdk 26
         targetSdk 34
-        versionCode 8
-        versionName "0.0.7 测试版"
+        versionCode 9
+        versionName "0.0.8 测试版"
     }
 
     signingConfigs {

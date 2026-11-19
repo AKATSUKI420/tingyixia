@@ -98,24 +98,30 @@ public class LockOverlayTest {
         WindowManager.LayoutParams lp = windowParams(overlay);
         assertEquals(PixelFormat.OPAQUE, lp.format);
         assertEquals(0, lp.windowAnimations);
-        assertTrue("窗口整体淡入由内容层控制，alpha 在 0 到 1 之间",
-                lp.alpha >= 0f && lp.alpha <= 1f);
+        assertEquals("窗口必须保持完全不透明，半透明 overlay 会丢触摸目标",
+                1f, lp.alpha, 0.001f);
     }
 
     @Test
-    public void windowFadesInEvenWhenSystemAnimationsAreOff() {
+    public void contentAnimatesEvenWhenSystemAnimationsAreOff() {
         android.provider.Settings.Global.putFloat(app.getContentResolver(),
                 android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 0f);
 
         show(10);
         WindowManager.LayoutParams lp = windowParams(overlay);
-        assertEquals("第一帧不能直接全亮", 0f, lp.alpha, 0.001f);
+        View content = view(overlay).findViewById(R.id.lock_content);
+        assertNotNull("遮罩内容层不见了", content);
+        assertEquals("窗口必须始终完全不透明", 1f, lp.alpha, 0.001f);
+        assertEquals("第一帧内容还没出现", 0f, content.getAlpha(), 0.01f);
 
         ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(80));
-        assertTrue("窗口应该正在淡入，而不是一帧跳完：" + lp.alpha, lp.alpha > 0f && lp.alpha < 1f);
+        assertTrue("内容应该正在进场，而不是一帧跳完：" + content.getAlpha(),
+                content.getAlpha() > 0f && content.getAlpha() < 1f);
+        assertEquals("窗口不能跟着变半透明", 1f, lp.alpha, 0.001f);
 
         ShadowLooper.shadowMainLooper().idleFor(Duration.ofMillis(500));
-        assertEquals("淡入结束应该完全盖住", 1f, lp.alpha, 0.001f);
+        assertEquals("进场结束内容应该完全显示", 1f, content.getAlpha(), 0.01f);
+        assertEquals("窗口始终保持不透明", 1f, lp.alpha, 0.001f);
     }
 
     @Test
@@ -286,6 +292,7 @@ public class LockOverlayTest {
         assertEquals("触摸和焦点标记都要清掉",
                 0, lp.flags & (WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                         | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE));
+        assertEquals("窗口必须完全不透明才有点击目标", 1f, lp.alpha, 0.001f);
     }
 
     @Test
@@ -297,6 +304,7 @@ public class LockOverlayTest {
         assertEquals("退场期间也不能设成不可触摸/不可聚焦",
                 0, lp.flags & (WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                         | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE));
+        assertEquals("退场期间窗口也必须保持完全不透明", 1f, lp.alpha, 0.001f);
     }
 
     /** 四种动效都要能进、能出；设置读的是落下时那一次的值。 */
