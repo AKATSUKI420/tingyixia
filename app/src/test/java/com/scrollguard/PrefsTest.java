@@ -33,8 +33,9 @@ public class PrefsTest {
         assertEquals(10L, Prefs.limitMin(c()));
         assertFalse(Prefs.enabled(c()));
         assertFalse(Prefs.strict(c()));
-        assertEquals("默认轻推淡入", Motion.FADE, Prefs.motion(c()));
+        assertEquals("默认中心放大", Motion.CENTER, Prefs.motion(c()));
         assertEquals("默认 1× 速度", 1f, Prefs.motionSpeed(c()), 0.001f);
+        assertFalse("默认不隐藏", Prefs.hideRecents(c()));
         assertFalse("还没设密码", Prefs.hasPin(c()));
         assertEquals(0L, Prefs.todayMs(c()));
         assertEquals(0, Prefs.todayLocks(c()));
@@ -51,12 +52,14 @@ public class PrefsTest {
         Prefs.setLimitMin(c(), 20L);
         Prefs.setEnabled(c(), true);
         Prefs.setStrict(c(), true);
+        Prefs.setHideRecents(c(), true);
         Prefs.addTodayMs(c(), 90000L);
         Prefs.bumpTodayLocks(c());
 
         assertEquals(20L, Prefs.limitMin(c()));
         assertTrue(Prefs.enabled(c()));
         assertTrue(Prefs.strict(c()));
+        assertTrue(Prefs.hideRecents(c()));
         assertEquals(90000L, Prefs.todayMs(c()));
         assertEquals(1, Prefs.todayLocks(c()));
     }
@@ -101,13 +104,13 @@ public class PrefsTest {
     /** 动效写进去再读还在；乱填的值退回轻推淡入 */
     @Test
     public void motionSurvivesAndUnknownValuesFallBack() {
-        assertEquals(Motion.FADE, Prefs.motion(c()));
+        assertEquals(Motion.CENTER, Prefs.motion(c()));
 
         Prefs.setMotion(c(), Motion.SHEET);
         assertEquals(Motion.SHEET, Prefs.motion(c()));
 
         Prefs.setMotion(c(), "nonsense");
-        assertEquals("不认识的值当轻推淡入", Motion.FADE, Prefs.motion(c()));
+        assertEquals("不认识的值当中心放大", Motion.CENTER, Prefs.motion(c()));
     }
 
     /** 动画速度写进去再读还在；乱填的值吸到最近一档 */
@@ -168,7 +171,7 @@ public class PrefsTest {
         assertEquals(0L, Prefs.todayMs(c()));
         assertEquals(0, Prefs.todayLocks(c()));
         assertEquals("清完回到默认两个都看着", 2, Prefs.targets(c()).size());
-        assertEquals("动效回到默认轻推淡入", Motion.FADE, Prefs.motion(c()));
+        assertEquals("动效回到默认中心放大", Motion.CENTER, Prefs.motion(c()));
         assertEquals("速度回到 1×", 1f, Prefs.motionSpeed(c()), 0.001f);
         assertTrue("密码也没了", Prefs.pinHash(c()).isEmpty());
     }
@@ -181,7 +184,7 @@ public class PrefsTest {
         assertEquals(45L, sp.getLong("limit_min", 0L));
     }
 
-    /** 时长可以填成任意整数分钟，但会被夹在 1–600 里，读出来也不越界 */
+    /** 时长可以填成任意整数分钟，但会被夹在 1–720 里，读出来也不越界 */
     @Test
     public void limitIsClampedToRange() {
         Prefs.setLimitMin(c(), 37L);
@@ -191,10 +194,10 @@ public class PrefsTest {
         assertEquals("0 分钟等于不设防，拉到下限", 1L, Prefs.limitMin(c()));
 
         Prefs.setLimitMin(c(), 99999L);
-        assertEquals("太大就拉回上限", 600L, Prefs.limitMin(c()));
+        assertEquals("太大就拉回上限", 720L, Prefs.limitMin(c()));
     }
 
-    /** 自动解开默认关；填多少存多少，越界夹回 0–600 */
+    /** 自动解开默认关；填多少存多少，越界夹回 0–720 */
     @Test
     public void autoUnlockIsClampedToRange() {
         assertEquals("默认不自动解开", 0, Prefs.autoUnlockMin(c()));
@@ -209,7 +212,7 @@ public class PrefsTest {
         assertEquals("太大就拉回上限", AutoUnlock.MAX, Prefs.autoUnlockMin(c()));
 
         SharedPreferences sp = c().getSharedPreferences("guard", Context.MODE_PRIVATE);
-        assertEquals(600L, sp.getLong("auto_unlock_min", -1L));
+        assertEquals(720L, sp.getLong("auto_unlock_min", -1L));
     }
 
     /** 自动解开设置不会污染别的设置 */

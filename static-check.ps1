@@ -41,8 +41,8 @@ function Check($name, $ok, $detail) {
 
 # ---- 1. permissions -------------------------------------------------------
 $perm = & (Join-Path $bt 'aapt2.exe') dump permissions $Apk 2>&1 | Out-String
-Check 'no INTERNET permission'     (-not ($perm -match 'android\.permission\.INTERNET'))  'apk declares INTERNET'
-Check 'no ACCESS_NETWORK_STATE'    (-not ($perm -match 'ACCESS_NETWORK_STATE'))           'apk declares ACCESS_NETWORK_STATE'
+Check 'declares INTERNET'          ($perm -match 'android\.permission\.INTERNET')        'missing INTERNET'
+Check 'declares INSTALL_PACKAGES'  ($perm -match 'android\.permission\.REQUEST_INSTALL_PACKAGES') 'missing REQUEST_INSTALL_PACKAGES'
 foreach ($p in @('SYSTEM_ALERT_WINDOW','FOREGROUND_SERVICE','FOREGROUND_SERVICE_SPECIAL_USE',
                  'RECEIVE_BOOT_COMPLETED','POST_NOTIFICATIONS','REQUEST_IGNORE_BATTERY_OPTIMIZATIONS')) {
     Check ("declares " + $p) ($perm -match ('android\.permission\.' + $p)) 'missing'
@@ -76,7 +76,7 @@ Check "signed by TingYixia"    ($sig -match 'certificate DN: CN=TingYixia') 'une
 
 # ---- 4. components --------------------------------------------------------
 $tree = & (Join-Path $bt 'aapt2.exe') dump xmltree --file AndroidManifest.xml $Apk 2>&1 | Out-String
-foreach ($c in @('MainActivity','SetupActivity','GuardService','ShieldService','ReviveJob','BootReceiver')) {
+foreach ($c in @('MainActivity','SetupActivity','GuardService','ShieldService','ReviveJob','BootReceiver','InstallResultReceiver')) {
     Check ("manifest has " + $c) ($tree -match ('com\.scrollguard\.' + $c)) 'component missing'
 }
 Check 'no backup' ($tree -match 'allowBackup\(.*\)=false') 'allowBackup not false'

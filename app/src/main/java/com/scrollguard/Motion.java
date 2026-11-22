@@ -11,7 +11,7 @@ public final class Motion {
     public static final String SPRING = "spring";
     public static final String CENTER = "center";
 
-    public static final String DEFAULT = FADE;
+    public static final String DEFAULT = CENTER;
 
     public static final String LABEL_FADE = "轻推淡入";
     public static final String LABEL_SHEET = "底部浮起";
@@ -24,10 +24,11 @@ public final class Motion {
 
     /** 只认这五个；存坏了、升级后出现新值，都退回默认。 */
     public static String normalize(String v) {
-        if (SHEET.equals(v) || STAGGER.equals(v) || SPRING.equals(v) || CENTER.equals(v)) {
+        if (FADE.equals(v) || SHEET.equals(v) || STAGGER.equals(v) || SPRING.equals(v)
+                || CENTER.equals(v)) {
             return v;
         }
-        return FADE;
+        return DEFAULT;
     }
 
     public static String label(String v) {

@@ -1,0 +1,7 @@
+{
+  "versionCode": 10,
+  "versionName": "0.0.9 测试版",
+  "apkUrl": "https://github.com/AKATSUKI420/tingyixia/releases/download/v0.0.9/tingyixia-v0.0.9.apk",
+  "sha256": "5DA718FDCA977226098229925F0586A2A659DE66817112753B1191DB209F5B88",
+  "notes": "新增 App 内检查更新；遮罩动画可选；修复最近任务遮罩残留。"
+}

@@ -11,8 +11,8 @@ public final class Limits {
     /** 「连着刷多久就拦」最短 1 分钟 */
     public static final int MIN = 1;
 
-    /** 最长 10 小时；再长就等于没有防护了 */
-    public static final int MAX = 600;
+    /** 最长 12 小时；再长就等于没有防护了 */
+    public static final int MAX = 12 * 60;
 
     /** 没设过时的时长 */
     public static final int DEFAULT = 10;

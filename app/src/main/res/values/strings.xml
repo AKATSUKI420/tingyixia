@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">停一下</string>
-    <string name="accessibility_desc">用来判断你现在是不是正在抖音或哔哩哔哩里刷竖屏短视频：只看前台是哪个应用、屏幕是横还是竖，必要时读一下这两个应用屏幕上显示的文字（用来区分长视频和短视频）。不读取聊天内容，不联网，不上传任何东西，所有数据只存在这台手机上。</string>
+    <string name="accessibility_desc">用来判断你现在是不是正在抖音或哔哩哔哩里刷竖屏短视频：只看前台是哪个应用、屏幕是横还是竖，必要时读一下这两个应用屏幕上显示的文字（用来区分长视频和短视频）。不读取聊天内容；平时不联网，只有你主动检查更新时访问版本信息，不上传任何数据。</string>
+    <string name="update_check">检查更新</string>
+    <string name="update_current">当前版本 %1$s</string>
+    <string name="update_checking">正在检查…</string>
+    <string name="update_latest">已是最新版本</string>
+    <string name="update_found">发现新版本 %1$s</string>
+    <string name="update_empty_notes">有新版本可用。</string>
+    <string name="update_download">下载并安装</string>
+    <string name="update_later">稍后</string>
+    <string name="update_downloading">正在下载…</string>
+    <string name="update_verify_failed">安装包校验失败，已停止。</string>
+    <string name="update_download_failed">下载失败，请稍后再试。</string>
+    <string name="update_storage_failed">存储空间不足。</string>
+    <string name="update_install_failed">安装未完成。</string>
+    <string name="update_install_success">更新完成</string>
+    <string name="update_unknown_sources">需要允许安装未知应用</string>
+    <string name="update_unknown_sources_msg">请在系统设置里允许“停一下”安装应用，然后回来再点检查更新。</string>
+    <string name="update_go_settings">去设置</string>
+    <string name="update_check_failed">检查更新失败，请稍后再试。</string>
+    <string name="update_bad_manifest">更新信息有误。</string>
+    <string name="update_install_request">请在系统弹窗里确认安装。</string>
 </resources>

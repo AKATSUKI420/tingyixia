@@ -88,17 +88,19 @@ public class LockOverlayTest {
     }
 
     /**
-     * 全屏遮罩本身完全不透明。第一帧如果先按 TRANSLUCENT 合成，
-     * 视频上面会闪一下；这里把窗口格式和进入动画固定住。
+     * 磨砂玻璃浮层：窗口半透明合成 + 让系统在背后做模糊，
+     * 但 alpha 仍保持 1，免得丢触摸目标。
      */
     @Test
-    public void windowIsOpaqueAndHasNoWindowAnimation() {
+    public void windowIsTranslucentAndAsksForBlur() {
         show(10);
 
         WindowManager.LayoutParams lp = windowParams(overlay);
-        assertEquals(PixelFormat.OPAQUE, lp.format);
+        assertEquals(PixelFormat.TRANSLUCENT, lp.format);
+        assertTrue("该向系统要背后模糊",
+                (lp.flags & WindowManager.LayoutParams.FLAG_BLUR_BEHIND) != 0);
         assertEquals(0, lp.windowAnimations);
-        assertEquals("窗口必须保持完全不透明，半透明 overlay 会丢触摸目标",
+        assertEquals("窗口 alpha 仍要是 1，不然会丢触摸目标",
                 1f, lp.alpha, 0.001f);
     }
 
@@ -164,26 +166,33 @@ public class LockOverlayTest {
 
         assertTrue(overlay.isShowing());
         TextView title = view(overlay).findViewById(R.id.lock_title);
-        assertEquals(Text.lockTitle(10), title.getText().toString());
+        assertEquals("请输入密码解锁", title.getText().toString());
+        TextView time = view(overlay).findViewById(R.id.lock_time);
+        assertEquals("10:00", time.getText().toString());
         assertNotNull(view(overlay).findViewById(R.id.pad));
     }
 
     @Test
-    public void lockScreenUsesIOSLayout() {
+    public void lockScreenUsesMinimalWhiteLayout() {
         show(10);
         View v = view(overlay);
 
-        assertNotNull("锁屏顶上该有个小锁图标", v.findViewById(R.id.lock_icon));
+        TextView time = v.findViewById(R.id.lock_time);
+        assertNotNull("锁屏该有连刷时长", time);
+        assertEquals(Ui.sp(app, 60), time.getTextSize(), 1f);
 
         TextView title = v.findViewById(R.id.lock_title);
-        assertEquals(Ui.sp(app, 32), title.getTextSize(), 1f);
-        assertEquals("浅色锁屏标题该是黑的", Color.BLACK, title.getCurrentTextColor());
+        assertEquals(Ui.sp(app, 20), title.getTextSize(), 1f);
+        assertEquals("锁屏标题该是正文黑", app.getColor(R.color.text),
+                title.getCurrentTextColor());
 
         TextView kicker = v.findViewById(R.id.lock_kicker);
-        assertEquals(Ui.sp(app, 13), kicker.getTextSize(), 1f);
+        assertEquals(Ui.sp(app, 11), kicker.getTextSize(), 1f);
 
         TextView footer = v.findViewById(R.id.lock_footer);
         assertEquals(Ui.sp(app, 13), footer.getTextSize(), 1f);
+
+        assertNotNull("锁屏该有忘记密码", v.findViewById(R.id.lock_forgot));
     }
 
     @Test

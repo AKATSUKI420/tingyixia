@@ -18,14 +18,14 @@ public class AutoUnlockTest {
         assertEquals(-1L, AutoUnlock.windowMs(0));
         assertEquals(-1L, AutoUnlock.remainingMs(0, 1000L, 2000L));
         assertFalse(AutoUnlock.due(0, 1000L, 1000L + 24 * 60 * MIN));
-        assertEquals("不自动解开", AutoUnlock.label(0));
+        assertEquals("不自动", AutoUnlock.label(0));
     }
 
     @Test
     public void negativeIsAlsoOff() {
         assertEquals(-1L, AutoUnlock.windowMs(-5));
         assertFalse(AutoUnlock.due(-5, 0L, 9999999L));
-        assertEquals("不自动解开", AutoUnlock.label(-5));
+        assertEquals("不自动", AutoUnlock.label(-5));
     }
 
     @Test
@@ -67,6 +67,8 @@ public class AutoUnlockTest {
     public void labelReadsLikeAThing() {
         assertEquals("5 分钟后自动解开", AutoUnlock.label(5));
         assertEquals("1 分钟后自动解开", AutoUnlock.label(1));
+        assertEquals("1 小时 10 分后自动解开", AutoUnlock.label(70));
+        assertEquals("12 小时后自动解开", AutoUnlock.label(720));
     }
 
     @Test

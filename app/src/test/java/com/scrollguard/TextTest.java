@@ -32,6 +32,8 @@ public class TextTest {
     public void limit() {
         assertEquals("10 分钟", Text.limit(10));
         assertEquals("45 分钟", Text.limit(45));
+        assertEquals("1 小时 10 分", Text.limit(70));
+        assertEquals("12 小时", Text.limit(720));
     }
 
     @Test

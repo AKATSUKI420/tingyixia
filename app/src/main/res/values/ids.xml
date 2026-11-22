@@ -3,4 +3,9 @@
     <item name="page_title" type="id" />
     <item name="status_line" type="id" />
     <item name="primary_button" type="id" />
+    <item name="lock_time" type="id" />
+    <item name="lock_forgot" type="id" />
+    <item name="lock_progress" type="id" />
+    <item name="setup_step" type="id" />
+    <item name="setup_progress" type="id" />
 </resources>

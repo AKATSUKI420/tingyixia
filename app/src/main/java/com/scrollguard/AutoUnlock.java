@@ -10,7 +10,8 @@ public final class AutoUnlock {
 
     public static final int OFF = 0;
     public static final int MIN = 0;
-    public static final int MAX = 600;
+    /** 最长 12 小时，和拦截时长同一个上限 */
+    public static final int MAX = 12 * 60;
 
     private AutoUnlock() {
     }
@@ -43,9 +44,17 @@ public final class AutoUnlock {
     /** 首页那一行的值。 */
     public static String label(int minutes) {
         if (minutes <= 0) {
-            return "不自动解开";
+            return "不自动";
         }
-        return Math.min(minutes, MAX) + " 分钟后自动解开";
+        int m = Math.min(minutes, MAX);
+        if (m < 60) {
+            return m + " 分钟后自动解开";
+        }
+        int h = m / 60;
+        int rest = m % 60;
+        return rest == 0
+                ? h + " 小时后自动解开"
+                : h + " 小时 " + rest + " 分后自动解开";
     }
 
     /** 遮罩下面那行倒计时。 */

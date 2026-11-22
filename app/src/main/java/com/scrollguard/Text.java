@@ -36,7 +36,12 @@ public final class Text {
     }
 
     public static String limit(long min) {
-        return min + " 分钟";
+        if (min < 60) {
+            return min + " 分钟";
+        }
+        long h = min / 60;
+        long m = min % 60;
+        return m == 0 ? h + " 小时" : h + " 小时 " + m + " 分";
     }
 
     public static String lockTitle(long min) {

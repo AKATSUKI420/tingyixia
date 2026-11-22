@@ -40,6 +40,8 @@ public final class LockOverlay {
     private float speed = MotionSpeed.DEFAULT;
     private PinPadView pad;
     private TextView footer;
+    private TextView timeText;
+    private Ui.Bar progress;
     private long shownAt;
     private int autoUnlockMin;
     private int fails;
@@ -64,6 +66,11 @@ public final class LockOverlay {
             if (attached && !hiding) {
                 long sec = (now - shownAt) / 1000L;
                 footer.setText(footerLine(sec, autoUnlockMin, shownAt, now));
+                if (progress != null && autoUnlockMin > 0) {
+                    long total = AutoUnlock.remainingMs(autoUnlockMin, shownAt, now);
+                    long span = autoUnlockMin * 60_000L;
+                    progress.setFraction(1f - total / (float) span);
+                }
             }
             if ((attached && !hiding) || autoUnlockMin > 0) {
                 handler.postDelayed(this, 1000);
@@ -187,27 +194,63 @@ public final class LockOverlay {
 
         TextView title = v.findViewById(R.id.lock_title);
         footer = v.findViewById(R.id.lock_footer);
+        timeText = v.findViewById(R.id.lock_time);
         pad = v.findViewById(R.id.pad);
         content = v.findViewById(R.id.lock_content);
 
-        title.setText(Text.lockTitle(limitMin));
+        title.setText("请输入密码解锁");
+        title.setTypeface(Ui.medium(ctx));
+        if (timeText != null) {
+            timeText.setText(String.format(java.util.Locale.US, "%02d:00", limitMin));
+            timeText.setTypeface(Ui.medium(ctx));
+        }
         footer.setText("");
+        pad.setBare(true);
         pad.setMessage("");
         pad.setListener(this::onPin);
+
+        View forgot = v.findViewById(R.id.lock_forgot);
+        if (forgot != null) {
+            forgot.setOnClickListener(x -> {
+                dismiss();
+                try {
+                    android.content.Intent i = new android.content.Intent(ctx, SetupActivity.class);
+                    i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                    i.putExtra(SetupActivity.EXTRA_CHANGE, true);
+                    ctx.startActivity(i);
+                } catch (Throwable ignored) {
+                    // 打不开就算了，用户还能从规则页进
+                }
+            });
+        }
+
+        android.widget.FrameLayout holder = v.findViewById(R.id.lock_progress);
+        if (holder != null) {
+            progress = Ui.bar(ctx, 0f);
+            holder.addView(progress, new android.widget.FrameLayout.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(ctx, 4)));
+            progress.setVisibility(autoMinutes > 0 ? View.VISIBLE : View.INVISIBLE);
+        }
         prepareContentIn();
 
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.OPAQUE);
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                        | WindowManager.LayoutParams.FLAG_BLUR_BEHIND,
+                PixelFormat.TRANSLUCENT);
         lp.gravity = Gravity.TOP | Gravity.START;
-        // The lock screen is fully opaque. Making that explicit avoids a
-        // translucent-to-opaque surface swap on the first frame, which shows
-        // up as a brief flash over the app underneath.
+        // 半透玻璃：让下面那个 App 隐约透上来，再叠一层暖白。
         lp.alpha = 1f;
         lp.windowAnimations = 0;
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            try {
+                lp.setBlurBehindRadius(Ui.dp(ctx, 26));
+            } catch (Throwable ignored) {
+                // 有些 ROM 不支持窗口模糊，就只留半透
+            }
+        }
 
         try {
             wm.addView(v, lp);
@@ -263,6 +306,8 @@ public final class LockOverlay {
         content = null;
         pad = null;
         footer = null;
+        timeText = null;
+        progress = null;
         lp = null;
         onUnlock = null;
         checking = false;
@@ -360,6 +405,8 @@ public final class LockOverlay {
         content = null;
         pad = null;
         footer = null;
+        timeText = null;
+        progress = null;
         lp = null;
         onUnlock = null;
         checking = false;
@@ -577,10 +624,10 @@ public final class LockOverlay {
             return new View[0];
         }
         return new View[]{
-                root.findViewById(R.id.lock_icon),
                 root.findViewById(R.id.lock_kicker),
+                root.findViewById(R.id.lock_time),
                 root.findViewById(R.id.lock_title),
-                root.findViewById(R.id.lock_sub),
+                root.findViewById(R.id.lock_forgot),
                 root.findViewById(R.id.pad),
                 root.findViewById(R.id.lock_footer)
         };

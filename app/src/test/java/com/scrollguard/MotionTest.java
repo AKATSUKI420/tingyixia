@@ -9,11 +9,11 @@ import static org.junit.Assert.assertTrue;
 public class MotionTest {
 
     @Test
-    public void defaultsToFade() {
-        assertEquals(Motion.FADE, Motion.DEFAULT);
-        assertEquals(Motion.FADE, Motion.normalize(null));
-        assertEquals(Motion.FADE, Motion.normalize(""));
-        assertEquals(Motion.FADE, Motion.normalize("nonsense"));
+    public void defaultsToCenter() {
+        assertEquals(Motion.CENTER, Motion.DEFAULT);
+        assertEquals(Motion.CENTER, Motion.normalize(null));
+        assertEquals(Motion.CENTER, Motion.normalize(""));
+        assertEquals(Motion.CENTER, Motion.normalize("nonsense"));
     }
 
     @Test
@@ -46,7 +46,7 @@ public class MotionTest {
         for (int i = 0; i < Motion.values().length; i++) {
             assertEquals(i, Motion.indexOf(Motion.values()[i]));
         }
-        assertEquals(0, Motion.indexOf("nonsense"));
+        assertEquals("不认识的值当默认", Motion.indexOf(Motion.DEFAULT), Motion.indexOf("nonsense"));
     }
 
     @Test

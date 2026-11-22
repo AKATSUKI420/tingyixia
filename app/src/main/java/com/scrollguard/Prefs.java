@@ -87,6 +87,15 @@ public final class Prefs {
         sp(c).edit().putBoolean("strict", v).apply();
     }
 
+    /** 后台隐藏：离开以后不在最近任务里留一条。默认关。 */
+    public static boolean hideRecents(Context c) {
+        return sp(c).getBoolean("hide_recents", false);
+    }
+
+    public static void setHideRecents(Context c, boolean v) {
+        sp(c).edit().putBoolean("hide_recents", v).apply();
+    }
+
     /** 遮罩出现、消失的动效；默认轻推淡入。 */
     public static String motion(Context c) {
         return Motion.normalize(sp(c).getString("motion", Motion.DEFAULT));

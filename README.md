@@ -2,9 +2,9 @@
 
 只给自己用的 Android 防沉迷小工具：在抖音 / 哔哩哔哩里**竖着手机连续刷短视频**，攒满设定时长（默认 10 分钟）就盖住当前视频，必须输 6 位密码才能回去；到点后切走或按 Home，遮罩会自己收起，回到抖音 / B 站才再盖住。只遮罩这两个 App，没有全局遮罩。
 
-- 版本 **0.0.8 测试版**（versionCode 9）｜包名 `com.scrollguard`｜Android 8.0（API 26）及以上
-- 安装包：仓库根目录 `停一下.apk`（55,743 字节，SHA-256 `5277206EFECB56E6F8C817BD6277CC58351995D1EA29D2C1A014BEBDFF9BF961`），打包产物另在 `dist/`
-- 不上架、不登录、不联网（APK 里连 `INTERNET` 权限都没申请），所有数据只在这台手机上
+- 版本 **0.0.9 测试版**（versionCode 10）｜包名 `com.scrollguard`｜Android 8.0（API 26）及以上
+- 安装包：仓库根目录 `停一下.apk`（85,880 字节，SHA-256 `5DA718FDCA977226098229925F0586A2A659DE66817112753B1191DB209F5B88`），打包产物另在 `dist/`
+- 不上架、不登录；平时不联网，只有你主动点「检查更新」时才访问版本信息，所有数据只在这台手机上
 
 ---
 
@@ -39,7 +39,8 @@
 | **自动解开** | 锁屏后 **0–600 分钟**自动放人（填 0 = 必须输密码）。设了以后遮罩底部显示倒计时；到点自己退回去，**并且计时清零**（否则一解锁又立刻满额） |
 | **今日统计** | 首页「今天」卡片：看了多久、被拦了几次；按天分键，第二天自动从零开始 |
 | **保活** | 前台常驻通知（`IMPORTANCE_MIN`，不响不震）+ 开机自启 + `JobScheduler` 每 15 分钟检查一次、掉了就拉起来 |
-| **隐私** | 没有 `INTERNET` / `ACCESS_NETWORK_STATE` 权限；`allowBackup=false`（可导出的密码文件等于可绕过的密码） |
+| **隐私** | 平时不联网；只有手动「检查更新」时访问 GitHub Releases 上的版本清单和 APK，不上传数据；`allowBackup=false`（可导出的密码文件等于可绕过的密码） |
+| **更新** | 「规则 → 关于 → 检查更新」：读取 HTTPS 清单，比较 versionCode，下载后校验 SHA-256 与签名证书，再交给系统安装器；不能静默安装 |
 | **界面** | iOS 浅色风格：分组灰底、白色 22dp 圆角卡片、34sp 大标题、蓝色胶囊主按钮、自绘 iOS 开关、圆形密码键；锁屏和设置页同风格 |
 | **本地持久化** | 设置、密码哈希、当天统计都在 `shared_prefs/guard.xml`，重启、杀进程、升级安装都不丢 |
 
@@ -49,7 +50,8 @@
 
 1. 把 `停一下.apk` 传到手机（微信文件传输助手、数据线、网盘都行）。
 2. 点开安装；系统问"允许安装未知应用"时允许一次。
-   - **从 v1.1.0 或更早版本升级：先卸载旧版再装。** 1.2.x 换成了正式签名，和旧包的调试签名不一致，系统会拒绝覆盖安装；卸载会清掉密码和当天统计。从 1.2.x 或 0.0.4–0.0.7 测试版可以直接覆盖（versionCode 已升到 9，签名相同）。
+   - **从 v1.1.0 或更早版本升级：先卸载旧版再装。** 1.2.x 换成了正式签名，和旧包的调试签名不一致，系统会拒绝覆盖安装；卸载会清掉密码和当天统计。从 1.2.x 或 0.0.4–0.0.9 测试版可以直接覆盖（versionCode 已升到 10，签名相同）。
+   - 装好 0.0.9 后，可以在「规则 → 关于 → 检查更新」里走 App 内更新；更新包必须和当前包同一签名。发布步骤见 `docs/update/README.md`。
 3. 打开 App，**先设一个 6 位数字密码**（输两遍；两遍不一样会提示「两次不一样，重来」并退回第一步）。
 4. 回到首页，把「能不能拦得住」里的三项都点成绿色：
    - **无障碍** —— 判断当前是不是在抖音/B 站、手机是不是竖着。不开就什么都认不出来。
@@ -194,7 +196,7 @@ iPhone 不给第三方 App 看别的 App 在干什么，所以装不了这个。
 
 ## 8. 代码结构
 
-代码在 `app/src/main/java/com/scrollguard/`，纯系统组件：没有 AndroidX、没有第三方库、没有网络代码。
+代码在 `app/src/main/java/com/scrollguard/`，纯系统组件：没有 AndroidX、没有第三方库；只有「检查更新」用系统 `HttpURLConnection` 访问 HTTPS。
 
 | 文件 | 干什么的 |
 | --- | --- |
@@ -211,6 +213,8 @@ iPhone 不给第三方 App 看别的 App 在干什么，所以装不了这个。
 | `Prefs` / `Pin` / `Gate` | 本地存储、密码哈希、开关防护的密码校验 |
 | `Limits` / `AutoUnlock` / `Text` | 两个可填数字的范围与文案 |
 | `ReviveJob` / `BootReceiver` | 15 分钟自愈、开机自启 |
+| `UpdateInfo` / `UpdateChecker` | 解析 HTTPS 更新清单，只接受更高 versionCode |
+| `UpdateDownloader` / `UpdateInstaller` | 下载 APK，校验 SHA-256 与签名证书，再交给系统安装器 |
 | `Env` / `Ui` | 权限状态查询、界面小工具 |
 
 ---
@@ -246,7 +250,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 ## 10. 怎么验它还能用
 
-**能在电脑上判的，全写成了自动测试（171 个，Robolectric）**：
+**能在电脑上判的，全写成了自动测试（182 个，Robolectric）**：
 
 ```powershell
 $env:JAVA_HOME = 'D:\android-tools\jdk17'
@@ -256,7 +260,7 @@ $env:ANDROID_SDK_ROOT = 'D:\android-tools\sdk'
 
 报告在 `app/build/reports/tests/testDebugUnitTest/index.html`。
 
-**APK 结构（32 项：无网络权限、无 allowBackup、签名、清单、无障碍配置……）**：
+**APK 结构（33 项：更新所需网络权限、无 allowBackup、签名、清单、无障碍配置……）**：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\static-check.ps1

@@ -40,21 +40,22 @@ public class LimitsTest {
     @Test
     public void rejectsOutOfRange() {
         assertEquals(-1, Limits.parse("0", Limits.MIN, Limits.MAX));
-        assertEquals(-1, Limits.parse("601", Limits.MIN, Limits.MAX));
+        assertEquals(-1, Limits.parse("721", Limits.MIN, Limits.MAX));
+        assertEquals(720, Limits.parse("720", Limits.MIN, Limits.MAX));
     }
 
     @Test
     public void autoUnlockAcceptsZeroAsOff() {
-        assertEquals(0, Limits.parse("0", Limits.AUTO_OFF, Limits.MAX));
-        assertEquals(30, Limits.parse("30", Limits.AUTO_OFF, Limits.MAX));
-        assertEquals(-1, Limits.parse("601", Limits.AUTO_OFF, Limits.MAX));
+        assertEquals(0, Limits.parse("0", Limits.AUTO_OFF, AutoUnlock.MAX));
+        assertEquals(30, Limits.parse("30", Limits.AUTO_OFF, AutoUnlock.MAX));
+        assertEquals(-1, Limits.parse("721", Limits.AUTO_OFF, AutoUnlock.MAX));
     }
 
     @Test
     public void clampPullsOldValuesBackIn() {
         assertEquals(1, Limits.clamp(0, Limits.MIN, Limits.MAX));
         assertEquals(1, Limits.clamp(-30, Limits.MIN, Limits.MAX));
-        assertEquals(600, Limits.clamp(99999, Limits.MIN, Limits.MAX));
+        assertEquals(720, Limits.clamp(99999, Limits.MIN, Limits.MAX));
         assertEquals(12, Limits.clamp(12, Limits.MIN, Limits.MAX));
         assertEquals(0, Limits.clamp(-1, Limits.AUTO_OFF, Limits.MAX));
     }
