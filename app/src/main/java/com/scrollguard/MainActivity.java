@@ -403,9 +403,9 @@ public class MainActivity extends Activity {
         // 目标 App
         Ui.header(root, "目标 App");
         LinearLayout targets = Ui.card(this);
-        targets.addView(Ui.row(this, R.drawable.ic_play, "抖音", null, switchTarget(Prefs.DOUYIN)));
+        targets.addView(Ui.row(this, R.drawable.ic_douyin, "抖音", null, switchTarget(Prefs.DOUYIN)));
         targets.addView(Ui.divider(this));
-        targets.addView(Ui.row(this, R.drawable.ic_play, "哔哩哔哩", null, switchTarget(Prefs.BILI)));
+        targets.addView(Ui.row(this, R.drawable.ic_bilibili, "哔哩哔哩", null, switchTarget(Prefs.BILI)));
         targets.addView(Ui.divider(this));
         targets.addView(Ui.row(this, R.drawable.ic_target, "播放时才计时", null, strictSwitch()));
         root.addView(targets);
@@ -487,8 +487,6 @@ public class MainActivity extends Activity {
         // 关于
         Ui.header(root, "关于");
         LinearLayout about = Ui.card(this);
-        about.addView(Ui.row(this, R.drawable.ic_info, "关于停一下",
-                "版本 " + versionName(), null));
         LinearLayout update = Ui.row(this, R.drawable.ic_info, "检查更新",
                 getString(R.string.update_current, versionName()));
         Ui.tap(update, this::checkForUpdates);

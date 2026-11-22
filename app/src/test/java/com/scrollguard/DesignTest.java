@@ -155,7 +155,7 @@ public class DesignTest {
         assertTrue(hasText(root, "动画"));
         assertTrue(hasText(root, "目标 App"));
         assertTrue(hasText(root, "权限"));
-        assertTrue(hasText(root, "关于停一下"));
+        assertTrue(hasText(root, "检查更新"));
         assertTrue(hasText(root, "试一下拦截"));
         assertTrue(hasText(root, "换密码"));
         assertTrue(hasText(root, "忘记密码"));

@@ -35,3 +35,6 @@ keys/
 /exitpin*
 /custom*
 /scale0*
+
+# local gradle home used while building
+.gradle-home/

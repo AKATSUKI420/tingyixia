@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 极简白：大留白、细线、黑白加一点蓝。和 design/scrollguard-motion/tokens.css 对齐。 -->
     <color name="bg">#FFFAFAF9</color>
@@ -17,5 +17,5 @@
     <color name="bad">#FFDC2626</color>
     <color name="bad_pressed">#FFB91C1C</color>
     <color name="warn">#FFB45309</color>
-    <color name="ic_launcher_bg">#FFFAFAF9</color>
+    <color name="ic_launcher_bg">#FF6DB2F3</color>
 </resources>
