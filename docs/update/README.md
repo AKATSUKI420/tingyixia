@@ -18,7 +18,7 @@ https://github.com/AKATSUKI420/tingyixia/releases/latest/download/update.json
 2. 构建 release 包，确认签名还是 `keys/tingyixia-release.jks`（`tingyixia`）。
 3. 计算 APK 的 SHA-256。
 4. 复制 `update.json.example` 为 `update.json`，改成本次版本、APK 直链和哈希。
-5. 在 GitHub 建一个 Release，tag 用 `v0.0.9` 这种格式。
+5. 在 GitHub 建一个 Release，tag 用 `v1.0.0` 这种格式。
 6. 把 APK 和 `update.json` 都上传到该 Release。
 7. 用旧版本安装包打开 App，点检查更新，完整走一遍下载 → 校验 → 系统安装。
 
@@ -26,11 +26,11 @@ https://github.com/AKATSUKI420/tingyixia/releases/latest/download/update.json
 
 ```json
 {
-  "versionCode": 10,
-  "versionName": "0.0.9 测试版",
-  "apkUrl": "https://github.com/AKATSUKI420/tingyixia/releases/download/v0.0.9/tingyixia-v0.0.9.apk",
-  "sha256": "5DA718FDCA977226098229925F0586A2A659DE66817112753B1191DB209F5B88",
-  "notes": "新增 App 内检查更新；遮罩动画可选；修复最近任务遮罩残留。"
+  "versionCode": 11,
+  "versionName": "1.0.0",
+  "apkUrl": "https://github.com/AKATSUKI420/tingyixia/releases/download/v1.0.0/tingyixia-v1.0.0.apk",
+  "sha256": "425AA3112B16C186DF5D1DF37C79055A326AB04CAF6805E3BB352686DF1FE162",
+  "notes": "首个正式版：只遮罩抖音 / 哔哩哔哩；1–600 分钟计时与自动解开；五种遮罩动画和四档速度；白色 iOS 风格界面；支持 App 内检查更新。"
 }
 ```
 
