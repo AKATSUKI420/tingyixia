@@ -209,21 +209,6 @@ public final class LockOverlay {
         pad.setMessage("");
         pad.setListener(this::onPin);
 
-        View forgot = v.findViewById(R.id.lock_forgot);
-        if (forgot != null) {
-            forgot.setOnClickListener(x -> {
-                dismiss();
-                try {
-                    android.content.Intent i = new android.content.Intent(ctx, SetupActivity.class);
-                    i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-                    i.putExtra(SetupActivity.EXTRA_CHANGE, true);
-                    ctx.startActivity(i);
-                } catch (Throwable ignored) {
-                    // 打不开就算了，用户还能从规则页进
-                }
-            });
-        }
-
         android.widget.FrameLayout holder = v.findViewById(R.id.lock_progress);
         if (holder != null) {
             progress = Ui.bar(ctx, 0f);
@@ -627,7 +612,6 @@ public final class LockOverlay {
                 root.findViewById(R.id.lock_kicker),
                 root.findViewById(R.id.lock_time),
                 root.findViewById(R.id.lock_title),
-                root.findViewById(R.id.lock_forgot),
                 root.findViewById(R.id.pad),
                 root.findViewById(R.id.lock_footer)
         };

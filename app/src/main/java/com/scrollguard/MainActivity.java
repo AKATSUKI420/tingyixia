@@ -494,13 +494,12 @@ public class MainActivity extends Activity {
         about.addView(update);
         root.addView(about);
 
-        // 三个按钮
+        // 两个按钮
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
         TextView test = Ui.button(this, "试一下拦截", Ui.GHOST);
         TextView change = Ui.button(this, "换密码", Ui.GHOST);
-        TextView forget = Ui.button(this, "忘记密码", Ui.GHOST);
-        for (TextView b : new TextView[]{test, change, forget}) {
+        for (TextView b : new TextView[]{test, change}) {
             b.setTextSize(14);
             b.setSingleLine(true);
             b.setPadding(Ui.dp(this, 6), b.getPaddingTop(), Ui.dp(this, 6), b.getPaddingBottom());
@@ -515,7 +514,6 @@ public class MainActivity extends Activity {
             launch(i);
             return true;
         }));
-        forget.setOnClickListener(v -> wipeConfirm());
         LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(0,
                 Ui.dp(this, 52), 1f);
         ap.rightMargin = Ui.dp(this, 4);
@@ -523,12 +521,7 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams ap2 = new LinearLayout.LayoutParams(0,
                 Ui.dp(this, 52), 1f);
         ap2.leftMargin = Ui.dp(this, 4);
-        ap2.rightMargin = Ui.dp(this, 4);
         actions.addView(change, ap2);
-        LinearLayout.LayoutParams ap3 = new LinearLayout.LayoutParams(0,
-                Ui.dp(this, 52), 1f);
-        ap3.leftMargin = Ui.dp(this, 4);
-        actions.addView(forget, ap3);
         LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         alp.topMargin = Ui.dp(this, 16);
@@ -1104,22 +1097,6 @@ public class MainActivity extends Activity {
             }
         }));
         d.show();
-    }
-
-    private void wipeConfirm() {
-        new AlertDialog.Builder(this)
-                .setTitle("清空数据后重设")
-                .setMessage("密码、今天的数据、所有设置都会没了。防护也会关掉。")
-                .setPositiveButton("清掉", (d, w) -> {
-                    Prefs.wipe(this);
-                    stopService(new Intent(this, GuardService.class));
-                    ReviveJob.cancel(this);
-                    GuardState.get().countedMs = 0;
-                    GuardState.get().fgPackage = "";
-                    launch(new Intent(this, SetupActivity.class));
-                })
-                .setNegativeButton("取消", null)
-                .show();
     }
 
     private void askBattery() {

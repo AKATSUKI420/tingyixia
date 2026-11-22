@@ -192,7 +192,6 @@ public class LockOverlayTest {
         TextView footer = v.findViewById(R.id.lock_footer);
         assertEquals(Ui.sp(app, 13), footer.getTextSize(), 1f);
 
-        assertNotNull("锁屏该有忘记密码", v.findViewById(R.id.lock_forgot));
     }
 
     @Test

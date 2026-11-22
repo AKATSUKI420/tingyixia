@@ -1,7 +1,7 @@
 {
-  "versionCode": 14,
-  "versionName": "1.0.3",
-  "apkUrl": "https://github.com/AKATSUKI420/tingyixia/releases/download/v1.0.3/tingyixia-v1.0.3.apk",
-  "sha256": "AE8E9BAA8BAE76E92915FC25C1E318D05D70D3DB24B88237C62C184165970627",
-  "notes": "1.0.3：应用内更新现在真的能装了——下载完直接交给系统安装器，确认和未知来源授权都在系统界面里完成。装着 1.0.1 / 1.0.2 的，这一版需要手动装一次（旧版的更新按钮本身是坏的），之后就能在 App 里正常更新。"
+  "versionCode": 15,
+  "versionName": "1.0.4",
+  "apkUrl": "https://github.com/AKATSUKI420/tingyixia/releases/download/v1.0.4/tingyixia-v1.0.4.apk",
+  "sha256": "32525D67FE1F7F303B6C68103BC7118521A7946DDD7091DDDEEA223F1645539C",
+  "notes": "1.0.4：删掉规则页和锁屏页的「忘记密码」；锁屏页只剩数字键盘。忘记密码时可在系统设置里清除应用数据后重设。"
 }

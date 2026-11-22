@@ -158,7 +158,7 @@ public class DesignTest {
         assertTrue(hasText(root, "检查更新"));
         assertTrue(hasText(root, "试一下拦截"));
         assertTrue(hasText(root, "换密码"));
-        assertTrue(hasText(root, "忘记密码"));
+        assertFalse("规则页不再放忘记密码", hasText(root, "忘记密码"));
         assertFalse("首页的仪表盘不该在规则页", hasText(root, "今天刷了"));
     }
 
