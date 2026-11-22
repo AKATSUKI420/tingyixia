@@ -599,11 +599,6 @@ public class MainActivity extends Activity {
     }
 
     private void downloadUpdate(final UpdateInfo info) {
-        if (Build.VERSION.SDK_INT >= 26
-                && !getPackageManager().canRequestPackageInstalls()) {
-            showUnknownSources();
-            return;
-        }
         final ProgressDialog progress = new ProgressDialog(this);
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progress.setTitle(getString(R.string.update_found, info.versionName));
