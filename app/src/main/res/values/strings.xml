@@ -17,7 +17,7 @@
     <string name="update_install_failed">安装未完成。</string>
     <string name="update_install_success">更新完成</string>
     <string name="update_unknown_sources">需要允许安装未知应用</string>
-    <string name="update_unknown_sources_msg">请在系统设置里允许“停一下”安装应用，然后回来再点检查更新。</string>
+    <string name="update_unknown_sources_msg">请到系统设置里允许“停一下”安装应用，然后再回来点检查更新。\n\n小米 / Redmi 通常在这里：设置 → 应用设置 → 授权管理 → 安装未知应用。列表里没有“停一下”时，先去文件管理里点一次安装包，它才会出现。</string>
     <string name="update_go_settings">去设置</string>
     <string name="update_check_failed">检查更新失败，请稍后再试。</string>
     <string name="update_bad_manifest">更新信息有误。</string>

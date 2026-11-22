@@ -18,10 +18,18 @@ import java.io.OutputStream;
 /**
  * Hands the verified APK to the system installer; the user still confirms.
  *
- * <p>Two routes: a PackageInstaller session (silent hand-off, the system shows
- * its own confirm dialog), and if that is refused — some ROMs reject sessions
- * even when "install unknown apps" is on — an {@code ACTION_VIEW} intent to the
- * system package installer, which checks the same permission itself.
+ * <p>The first route is a plain {@code ACTION_VIEW} intent at the downloaded
+ * file: the system package installer owns the "install unknown apps" prompt on
+ * every ROM, and on MIUI / HyperOS it is also what makes the app show up in
+ * that per-app list at all. Walking the user to the list ourselves tends to
+ * land on a page where "停一下" is still missing, because the app has never
+ * tried to install anything.
+ *
+ * <p>Only when no installer activity resolves do we fall back to a
+ * PackageInstaller session. That route is not silent: the system answers with
+ * {@code STATUS_PENDING_USER_ACTION} and waits for the app to launch the
+ * confirmation intent (see {@link InstallResultReceiver}), otherwise the
+ * install dies without a trace.
  */
 public final class UpdateInstaller {
 
@@ -32,10 +40,10 @@ public final class UpdateInstaller {
 
     public static void install(Context context, File apk) throws IOException {
         try {
-            installViaSession(context, apk);
-        } catch (SecurityException e) {
-            Log.w(TAG, "install session refused, falling back to installer intent", e);
             openSystemInstaller(context, apk);
+        } catch (IOException e) {
+            Log.w(TAG, "no system installer, trying a package session", e);
+            installViaSession(context, apk);
         }
     }
 

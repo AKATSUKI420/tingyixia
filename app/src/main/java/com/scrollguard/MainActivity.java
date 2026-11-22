@@ -17,6 +17,7 @@ import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
@@ -660,16 +661,41 @@ public class MainActivity extends Activity {
                 .setTitle(R.string.update_unknown_sources)
                 .setMessage(R.string.update_unknown_sources_msg)
                 .setPositiveButton(R.string.update_go_settings, (d, w) -> {
-                    try {
-                        Intent i = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                                Uri.parse("package:" + getPackageName()));
-                        startActivity(i);
-                    } catch (Throwable t) {
+                    if (!openUnknownSourcesSettings()) {
                         toast(getString(R.string.update_install_failed));
                     }
                 })
                 .setNegativeButton(R.string.update_later, null)
                 .show();
+    }
+
+    /**
+     * 打开“安装未知应用”里本应用那一页，ROM 不认这条深链时逐级退到更粗的设置页。
+     *
+     * <p>部分 MIUI / HyperOS 会解析 package: 参数却只显示整张列表，所以能打开
+     * 就算成功，找不到条目只能靠用户在列表里自己选——文案里已经说明了列表为空
+     * 时该怎么办。
+     */
+    private boolean openUnknownSourcesSettings() {
+        Uri self = Uri.parse("package:" + getPackageName());
+        Intent[] attempts = {
+                new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, self),
+                new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES),
+                new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, self),
+                new Intent(Settings.ACTION_SECURITY_SETTINGS),
+        };
+        for (Intent attempt : attempts) {
+            try {
+                if (attempt.resolveActivity(getPackageManager()) == null) {
+                    continue;
+                }
+                startActivity(attempt);
+                return true;
+            } catch (Throwable t) {
+                Log.w("StopGuard", "settings intent failed: " + attempt.getAction(), t);
+            }
+        }
+        return false;
     }
 
     private String dateLabel() {

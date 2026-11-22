@@ -120,7 +120,7 @@ public class MainActivityTest {
 
         for (String s : new String[]{"解锁", "自动解锁", "动画", "遮罩动画", "动画速度",
                 "目标 App", "抖音", "哔哩哔哩", "播放时才计时", "后台隐藏", "从最近任务里看不到",
-                "权限", "检查更新", "当前版本 1.0.2",
+                "权限", "检查更新", "当前版本 1.0.3",
                 "试一下拦截", "换密码", "忘记密码", "本地数据 · 仅更新时联网"}) {
             assertTrue("规则页少了 " + s, hasText(root, s) || hasTextContains(root, s));
         }
